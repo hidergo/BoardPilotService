@@ -20,6 +20,42 @@ struct HEDev *device_list[HED_DEVICE_ALLOC_SIZE];
 // Live device count
 int device_count = 0;
 
+
+int set_device_time (struct HEDev *device) {
+    time_t rawtime;
+
+    time(&rawtime);
+
+    hid_device *dev = hid_open(device->product->vendorid, device->product->productid, device->serial);
+
+    if(dev == NULL) {
+        printf("[WARNING] Could not open device\n");
+        return -1;
+    }
+
+    uint8_t buff[sizeof(struct hidergod_msg_header) + sizeof(struct hidergod_msg_set_value) + (sizeof(int) - 1)];
+
+    struct hidergod_msg_header *header = (struct hidergod_msg_header*)(buff + 0);
+    struct hidergod_msg_set_value *msg = (struct hidergod_msg_set_value*)(buff + sizeof(struct hidergod_msg_header));
+    int *value = (int*)&msg->data;
+
+    header->reportId = 0;
+    header->cmd = HIDERGOD_CMD_SET_VALUE;
+    header->chunkOffset = 0;
+    header->size = sizeof(struct hidergod_msg_set_value) + (sizeof(int) - 1);
+    header->chunkSize = header->size;
+    
+    msg->key = HIDERGOD_VALUE_KEY_TIME;
+    msg->length = 4;
+    *value = (int)rawtime;
+
+    hid_write(dev, buff, sizeof(buff));
+
+    hid_close(dev);
+
+    return 0;
+}
+
 int add_device (struct HEProduct *product, struct hid_device_info *info) {
     int f = 0;
     for(int i = 0; i < HED_DEVICE_ALLOC_SIZE; i++) {
@@ -32,6 +68,8 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             f = 1;
             heapi_trigger_event(APIEVENT_DEVICE_CONNECTED, dev);
             printf("Device %s %s (%X:%X) connected\n", dev->product->manufacturer, dev->product->product, dev->product->vendorid, dev->product->productid);
+
+            set_device_time(dev);
             break;
         }
     }
