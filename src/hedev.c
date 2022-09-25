@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "heapi.h"
+#include "hedev_msg.h"
 
 // hid:ergo products, used to find devices
 const struct HEProduct PRODUCT_LIST[] = {
@@ -22,39 +23,15 @@ struct HEDev *device_list[HED_DEVICE_ALLOC_SIZE];
 int device_count = 0;
 
 
-int set_device_time (struct HEDev *device) {
-    time_t rawtime;
-
-    time(&rawtime);
-
-    //hid_device *dev = hid_open(device->product->vendorid, device->product->productid, device->serial);
+int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
     hid_device *dev = hid_open_path(device->path);
-
     if(dev == NULL) {
         printf("[WARNING] Could not open device\n");
         return -1;
     }
-
-    uint8_t buff[sizeof(struct hidergod_msg_header) + sizeof(struct hidergod_msg_set_value) + (sizeof(int) - 1)];
-
-    struct hidergod_msg_header *header = (struct hidergod_msg_header*)(buff + 0);
-    struct hidergod_msg_set_value *msg = (struct hidergod_msg_set_value*)(buff + sizeof(struct hidergod_msg_header));
-    int *value = (int*)&msg->data;
-
-    header->reportId = 0;
-    header->cmd = HIDERGOD_CMD_SET_VALUE;
-    header->chunkOffset = 0;
-    header->size = sizeof(struct hidergod_msg_set_value) + (sizeof(int) - 1);
-    header->chunkSize = header->size;
-    
-    msg->key = HIDERGOD_VALUE_KEY_TIME;
-    msg->length = 4;
-    *value = (int)rawtime;
-
-    hid_write(dev, buff, sizeof(buff));
+    hid_write(dev, buffer, len);
 
     hid_close(dev);
-
     return 0;
 }
 
@@ -67,12 +44,20 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             strncpy(dev->path, info->path, 31);
             dev->active = 1;
             wcsncpy(dev->serial, info->serial_number, 63);
+            if(dev->serial == NULL) {
+                // Bluetooth device
+                dev->protocol = HED_PROTO_BT;
+            }
+            else {
+                // USB device
+                dev->protocol = HED_PROTO_USB;
+            }
             device_list[i] = dev;
             f = 1;
             heapi_trigger_event(APIEVENT_DEVICE_CONNECTED, dev);
             printf("Device %s %s (%X:%X) connected\n", dev->product->manufacturer, dev->product->product, dev->product->vendorid, dev->product->productid);
-
-            set_device_time(dev);
+            // Set device time
+            hedev_set_time(dev);
             break;
         }
     }
@@ -203,6 +188,7 @@ cJSON *hedev_to_json (struct HEDev *device) {
     snprintf(buff, 63, "%ls", device->serial);
     cJSON *dev = cJSON_AddObjectToObject(jsn, "device");
     cJSON_AddStringToObject(dev, "serial", buff);
+    cJSON_AddStringToObject(dev, "protocol", device->protocol == HED_PROTO_USB ? "usb" : "bt");
 
     return jsn;
 }

@@ -1,7 +1,7 @@
 #ifndef __HEAPI_MSG_H
 #define __HEAPI_MSG_H
 #include <stdint.h>
-
+#include "hedev.h"
 // HID MESSAGING
 
 #define HIDERGOD_VALUE_KEY_TIME     0x01
@@ -38,8 +38,23 @@ enum hidergod_cmd_t {
     HIDERGOD_CMD_SET_VALUE = 0x01
 };
 
-// Initialize header
-int hedev_build_header (struct hidergod_msg_header *header, enum hidergod_cmd_t cmd);
+/**
+ * @brief Initializes a header. Sets cmd to `cmd` and message size to `size`
+ * 
+ * @param header 
+ * @param cmd 
+ * @param size 
+ * @return int 
+ */
+int hedev_build_header (struct hidergod_msg_header *header, enum hidergod_cmd_t cmd, uint16_t size);
+
+/**
+ * @brief Sets the device time
+ * 
+ * @param device 
+ * @return int 
+ */
+int hedev_set_time (struct HEDev *device);
 
 
 

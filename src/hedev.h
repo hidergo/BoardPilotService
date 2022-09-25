@@ -9,6 +9,13 @@
 // Device allocation size
 #define HED_DEVICE_ALLOC_SIZE   8
 
+// Protocols
+// USB
+#define HED_PROTO_USB           0
+// Bluetooth
+#define HED_PROTO_BT            0
+
+
 // Product definition
 struct HEProduct {
     // Device VID
@@ -38,6 +45,8 @@ struct HEDev {
     uint8_t active;
     // hid path
     char path[32];
+    // Protocol
+    uint8_t protocol;
 };
 
 extern struct HEDev *device_list[HED_DEVICE_ALLOC_SIZE];
@@ -53,5 +62,15 @@ void hedev_init ();
 
 // Prints products
 void hedev_print_products ();
+
+/**
+ * @brief Writes to a device
+ * 
+ * @param device 
+ * @param buffer 
+ * @param len 
+ * @return int 
+ */
+int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len);
 
 #endif

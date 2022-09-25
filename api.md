@@ -57,7 +57,8 @@ Server response:
                 rev: number
             },
             device: {
-                serial: string
+                serial: string,
+                protocol: 'usb'|'bt'
             }
         },
         ...
@@ -88,7 +89,8 @@ Server message:
             rev: number
         },
         device: {
-            serial: string
+            serial: string,
+            protocol: 'usb'|'bt'
         }
     },
     reqid: number
