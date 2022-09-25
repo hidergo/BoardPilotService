@@ -131,7 +131,6 @@ int hedev_poll_usb_devices () {
     struct hid_device_info *curdev = devs;
     char buff[64];
     while (curdev != NULL) {
-        
         for(int i = 0; i < PRODUCT_COUNT; i++) {
             // Match to a device
             struct HEProduct *prod = (struct HEProduct *)&PRODUCT_LIST[i];
