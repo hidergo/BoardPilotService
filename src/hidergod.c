@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
 	while(1) {
 		hedev_poll_usb_devices();
-		sleep(1);
+		sleep(2);
 	}
 
 	cleanup();

@@ -9,8 +9,8 @@ const struct HEProduct PRODUCT_LIST[] = {
         0x1915,     // VID 
         0x520f,     // PID
         "hid:ergo", // Manufacturer
-        "Split(R)", // Product name
-        1
+        "split",    // Product name
+        1           // Revision
     }
 };
 const size_t PRODUCT_COUNT = sizeof(PRODUCT_LIST) / sizeof(struct HEProduct);
@@ -125,14 +125,39 @@ int hedev_poll_usb_devices () {
             device_list[i]->active = 0;
         }
     }
-    for(int i = 0; i < PRODUCT_COUNT; i++) {
-        struct HEProduct *prod = (struct HEProduct *)&PRODUCT_LIST[i];
-        struct hid_device_info *devs = hid_enumerate(prod->vendorid, prod->productid);
+    // Need to search for all devices because bluetooth devices don't have VID/PID
+    struct hid_device_info *devs = hid_enumerate(0x00, 0x00); 
 
-        struct hid_device_info *curdev = devs;
-        while (curdev != NULL) {
-            // Compare manufacturer/product name?
-            
+    struct hid_device_info *curdev = devs;
+    char buff[64];
+    while (curdev != NULL) {
+        
+        for(int i = 0; i < PRODUCT_COUNT; i++) {
+            // Match to a device
+            struct HEProduct *prod = (struct HEProduct *)&PRODUCT_LIST[i];
+            uint8_t dev_ok = 0;
+            if(curdev->product_id == 0x0000 && curdev->vendor_id == 0x0000) {
+                // Bluetooth device - match product/manufacturer name
+                // Compare manufacturer
+                snprintf(buff, 63, "%ls", curdev->manufacturer_string);
+                if(strcmp(buff, prod->manufacturer) == 0) {
+                    snprintf(buff, 63, "%ls", curdev->product_string);
+                    if(strcmp(buff, prod->product) == 0) {
+                        dev_ok = 1;
+                    }
+                }
+            }
+            else {
+                // USB device - match product/vendor ID
+                if((uint16_t)curdev->product_id == prod->productid && (uint16_t)curdev->vendor_id == prod->vendorid) {
+                    dev_ok = 1;
+                }
+            }
+            // Device not ok
+            if(!dev_ok)
+                continue;
+
+
             struct HEDev *dev = find_device(prod, curdev->serial_number);
             if(dev == NULL) {
                 // Add new device
@@ -142,11 +167,10 @@ int hedev_poll_usb_devices () {
                 // Update device active flag
                 dev->active = 1;
             }
-            curdev = curdev->next;
         }
-
-        hid_free_enumeration(devs);
+        curdev = curdev->next;
     }
+    hid_free_enumeration(devs);
     // Remove inactive devices
     device_cleanup();
 
