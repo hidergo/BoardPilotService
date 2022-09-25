@@ -96,6 +96,7 @@ int heapi_parse_client_message (struct HEApiClient *client) {
     {
         case APICMD_REGISTER:
             err = heapi_msg_AUTH(client, json);
+            printf("Client registered: %i\n", err);
             break;
         case APICMD_DEVICES:
             err = heapi_msg_DEVICES(client, json);
@@ -117,7 +118,6 @@ void *heapi_client_listener (void *data) {
     while(client->connected) {
         int len = recv(client->sockfd, client->recvBuffer, MAX_RECV_BUFFER_SIZE, 0);
         if(len == 0) {
-            printf("Client disconnected\n");
             break;
         }
         else if(len < 0) {
@@ -126,11 +126,14 @@ void *heapi_client_listener (void *data) {
         }
         client->recvBuffer[len] = 0;
         int err = heapi_parse_client_message(client);
-        if(err > 0) {
+        if(err != 0) {
             printf("[WARNING] Message parse error 0x%X\n", err);
             break;
         }
     }
+    shutdown(client->sockfd, SHUT_RDWR);
+    close(client->sockfd);
+    printf("Client disconnected\n");
     // CLIENT DISCONNECT
     memset(client, 0, sizeof(struct HEApiClient));
     client->sockfd = -1;
