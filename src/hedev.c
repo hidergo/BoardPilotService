@@ -10,6 +10,7 @@ const struct HEProduct PRODUCT_LIST[] = {
         0x520f,     // PID
         "hid:ergo", // Manufacturer
         "split",    // Product name
+        "hid:ergo split", // Product string for bluetooth
         1           // Revision
     }
 };
@@ -26,7 +27,8 @@ int set_device_time (struct HEDev *device) {
 
     time(&rawtime);
 
-    hid_device *dev = hid_open(device->product->vendorid, device->product->productid, device->serial);
+    //hid_device *dev = hid_open(device->product->vendorid, device->product->productid, device->serial);
+    hid_device *dev = hid_open_path(device->path);
 
     if(dev == NULL) {
         printf("[WARNING] Could not open device\n");
@@ -62,6 +64,7 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
         if(device_list[i] == NULL) {
             struct HEDev *dev = malloc(sizeof(struct HEDev));
             dev->product = product;
+            strncpy(dev->path, info->path, 31);
             dev->active = 1;
             wcsncpy(dev->serial, info->serial_number, 63);
             device_list[i] = dev;
@@ -84,11 +87,22 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
     return 0;
 }
 
-struct HEDev *find_device (struct HEProduct *product, const wchar_t *serial) {
+struct HEDev *find_device (struct HEProduct *product, const wchar_t *serial, const char *path) {
     for(int i = 0; i < HED_DEVICE_ALLOC_SIZE; i++) {
         if(device_list[i] != NULL) {
-            if(product == device_list[i]->product && wcscmp(serial, device_list[i]->serial) == 0) {
-                return device_list[i];
+            if(product == device_list[i]->product) {
+                if(serial == NULL) {
+                    // Check hid path
+                    if(strcmp(path, device_list[i]->path) == 0) {
+                        return device_list[i];
+                    }
+                }
+                else {
+                    // Check serial
+                    if(wcscmp(serial, device_list[i]->serial) == 0) {
+                        return device_list[i];
+                    }
+                }
             }
         }
     }
@@ -138,13 +152,9 @@ int hedev_poll_usb_devices () {
             uint8_t dev_ok = 0;
             if(curdev->product_id == 0x0000 && curdev->vendor_id == 0x0000) {
                 // Bluetooth device - match product/manufacturer name
-                // Compare manufacturer
-                snprintf(buff, 63, "%ls", curdev->manufacturer_string);
-                if(strcmp(buff, prod->manufacturer) == 0) {
-                    snprintf(buff, 63, "%ls", curdev->product_string);
-                    if(strcmp(buff, prod->product) == 0) {
-                        dev_ok = 1;
-                    }
+                snprintf(buff, 63, "%ls", curdev->product_string);
+                if(strcmp(buff, prod->product_string) == 0) {
+                    dev_ok = 1;
                 }
             }
             else {
@@ -157,9 +167,10 @@ int hedev_poll_usb_devices () {
             if(!dev_ok)
                 continue;
 
-
-            struct HEDev *dev = find_device(prod, curdev->serial_number);
+            // TODO: how to handle multiple devices without serial number?
+            struct HEDev *dev = find_device(prod, curdev->serial_number, curdev->path);
             if(dev == NULL) {
+                
                 // Add new device
                 add_device(prod, curdev);
             }
@@ -168,6 +179,7 @@ int hedev_poll_usb_devices () {
                 dev->active = 1;
             }
         }
+        
         curdev = curdev->next;
     }
     hid_free_enumeration(devs);
