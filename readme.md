@@ -1,5 +1,6 @@
 # hid:ergo daemon
 
 ## TODO
-* Handle possibility for vendor/productid collisions
-* Handle possibility for multiple same-kind devices (serial number?)
+* [HID] Handle possibility for vendor/productid collisions
+* [HID] Handle possibility for multiple same-kind devices (serial number?)
+* [API] Check message format
