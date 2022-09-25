@@ -20,6 +20,8 @@ struct HEProduct {
     const char *manufacturer;
     // Product string ex. Split(R)
     const char *product;
+    // Bluetooth product name match
+    const char *product_string;
 
     // Product revision
     uint8_t rev;
@@ -34,6 +36,8 @@ struct HEDev {
     struct HEProduct *product;
     wchar_t serial[64];
     uint8_t active;
+    // hid path
+    char path[32];
 };
 
 extern struct HEDev *device_list[HED_DEVICE_ALLOC_SIZE];
