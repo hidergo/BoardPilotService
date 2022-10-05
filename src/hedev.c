@@ -29,7 +29,13 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
         printf("[WARNING] Could not open device\n");
         return -1;
     }
-    hid_write(dev, buffer, len);
+    int err = hid_write(dev, buffer, len);
+    if(err == -1) {
+        printf("[ERROR] Failed to write to device: %ls\n", hid_error(dev));
+    }
+    else {
+        printf("[DEBUG] Wrote to %s\n", device->path);
+    }
 
     hid_close(dev);
     return 0;
@@ -44,7 +50,7 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             strncpy(dev->path, info->path, 31);
             dev->active = 1;
             wcsncpy(dev->serial, info->serial_number, 63);
-            if(dev->serial == NULL) {
+            if(dev->serial[0] == 0) {
                 // Bluetooth device
                 dev->protocol = HED_PROTO_BT;
             }
