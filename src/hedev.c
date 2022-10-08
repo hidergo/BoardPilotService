@@ -64,6 +64,24 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             printf("Device %s %s (%X:%X) connected\n", dev->product->manufacturer, dev->product->product, dev->product->vendorid, dev->product->productid);
             // Set device time
             hedev_set_time(dev);
+
+            hid_device *_hiddev = hid_open_path(dev->path);
+            if(dev == NULL) {
+                printf("[WARNING] Could not open device\n");
+                return -1;
+            }
+            uint8_t buff[64];
+            size_t readlen = 0;
+            while(readlen >= 0) {
+                readlen = hid_read(_hiddev, buff, 64);
+                printf("hid_read(%i): ", readlen);
+                for(int i = 0; i < readlen; i++) {
+                    printf(" %2X", buff[i]);
+                }
+                printf("\n");
+            }
+            hid_close(_hiddev);
+
             break;
         }
     }
