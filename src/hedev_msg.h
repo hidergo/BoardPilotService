@@ -2,12 +2,21 @@
 #define __HEAPI_MSG_H
 #include <stdint.h>
 #include "hedev.h"
+
+#ifdef __GNUC__
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
+#ifdef _MSC_VER
+#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
+#endif
+
 // HID MESSAGING
 
 #define HIDERGOD_VALUE_KEY_TIME     0x01
 
 // Package header
-struct __attribute__((packed)) hidergod_msg_header {
+PACK(struct hidergod_msg_header {
     // Report ID (always 0)
     uint8_t reportId;
     // Command
@@ -20,17 +29,17 @@ struct __attribute__((packed)) hidergod_msg_header {
     uint16_t chunkOffset;
     // CRC16
     uint16_t crc;
-};
+});
 
 // Set value message
-struct __attribute__((packed)) hidergod_msg_set_value {
+PACK(struct hidergod_msg_set_value {
     // Key
     uint16_t key;
     // Length
     uint8_t length;
     // Data will be at this address
     uint8_t data;
-};
+});
 
 
 // Command

@@ -2,7 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(__linux__)
 #include <unistd.h>
+#elif defined(_WIN32)
+
+#endif
 #include <assert.h>
 #include "cJSON/cJSON.h"
 
@@ -18,12 +22,12 @@ void heapi_send (struct HEApiClient *client, cJSON *json) {
     if(client == NULL) {
         for(int i = 0; i < MAX_API_CLIENT_COUNT; i++) {
             if(apiServer.clients[i].connected)
-                send(apiServer.clients[i].sockfd, buffer_out, strlen(buffer_out), 0);
+                send(apiServer.clients[i].sockfd, buffer_out, (int)strlen(buffer_out), 0);
         }
     }
     else {
         if(client->connected)
-            send(client->sockfd, buffer_out, strlen(buffer_out), 0);
+            send(client->sockfd, buffer_out, (int)strlen(buffer_out), 0);
     }
 
     free(buffer_out);
@@ -111,7 +115,11 @@ int heapi_parse_client_message (struct HEApiClient *client) {
     return err;
 }
 
+#if defined(__linux__)
 void *heapi_client_listener (void *data) {
+#elif defined(_WIN32)
+DWORD WINAPI heapi_client_listener (void *data) {
+#endif
     struct HEApiClient *client = (struct HEApiClient*)data;
     printf("Client connected\n");
     
@@ -131,23 +139,40 @@ void *heapi_client_listener (void *data) {
             break;
         }
     }
+#if defined(__linux__)
     shutdown(client->sockfd, SHUT_RDWR);
     close(client->sockfd);
+#elif defined(_WIN32)
+    shutdown(client->sockfd, SD_BOTH);
+    closesocket(client->sockfd);
+#endif
     printf("Client disconnected\n");
     // CLIENT DISCONNECT
     memset(client, 0, sizeof(struct HEApiClient));
     client->sockfd = -1;
     apiServer.clientCount--;
     // Exit thread
+#if defined(__linux__)
     pthread_exit(NULL);
+#elif defined(_WIN32)
+    return 0;
+#endif
 }
 
+#if defined(__linux__)
 void *heapi_server_listener (void *data) {
+#elif defined(_WIN32)
+DWORD WINAPI heapi_server_listener (void *data) {
+#endif
     while(1) {
         while(apiServer.status == APISERVER_STATE_CONNECTED) {
             // Wait for available connection slots...
             while(apiServer.clientCount >= MAX_API_CLIENT_COUNT) {
+                #if defined(__linux__)
                 sleep(1);
+                #elif defined(_WIN32)
+                Sleep(1000);
+                #endif
             }
 
             struct HEApiClient *cli = NULL;
@@ -164,25 +189,48 @@ void *heapi_server_listener (void *data) {
 
             socklen_t cli_addr_size = sizeof(struct sockaddr_in);
             cli->sockfd = accept(apiServer.sockfd, (struct sockaddr *)&cli->addrInfo, &cli_addr_size);
-            if(cli->sockfd < 0) {
+            if((int)cli->sockfd < 0) {
                 printf("[ERROR] error accepting a socket\n");
                 cli->sockfd = -1;
                 continue;
             }
             printf("Client connected, starting thread..\n");
             cli->connected = 1;
-            if(pthread_create(&cli->thread_client_listener, NULL, heapi_client_listener, cli)) {
-                printf("[ERROR] failed to create client thread\n");
-                exit(1);
-            }
+            #if defined(__linux__)
+                if(pthread_create(&cli->thread_client_listener, NULL, heapi_client_listener, cli)) {
+                    printf("[ERROR] failed to create client thread\n");
+                    exit(1);
+                }
+            #elif defined(_WIN32)
+                apiServer.thread_server_listener = CreateThread(NULL, 0, heapi_client_listener, NULL, 0, NULL);
+                if(apiServer.thread_server_listener == NULL) {
+                    printf("[ERROR] failed to create client thread\n");
+                    exit(1);
+                }
+            #endif
         }
         // In case of server shutting down, wait for 5s and restart
-        sleep(5);
+        #if defined(__linux__)
+            sleep(5);
+        #elif defined(_WIN32)
+            Sleep(5000);
+        #endif
         heapi_create_server(0);
     }
 }
 
 int heapi_create_server (uint8_t create_thread) {
+
+    // WSA startup for windows
+#ifdef _WIN32
+    WSADATA wsa;    
+    if(WSAStartup(MAKEWORD(2,2), &wsa) != 0)
+    {
+        printf("[ERROR] Could not initialize WSA (%i)", WSAGetLastError());
+        return -1;
+    }
+#endif
+
     int err = 0;
     apiServer.sockfd = -1;
     apiServer.port = 24429;
@@ -192,9 +240,9 @@ int heapi_create_server (uint8_t create_thread) {
         apiServer.clients[i].sockfd = -1;
     }
     apiServer.clientCount = 0;
-
+    // TODO: IPPROTO_TCP?
     apiServer.sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if(apiServer.sockfd < 0) {
+	if((int)apiServer.sockfd < 0) {
 		// ERROR
 		printf("[ERROR] Failed to open socket\n");
 		return -1;
@@ -212,7 +260,7 @@ int heapi_create_server (uint8_t create_thread) {
 	
 	// Reuse address
 	int en = 1;
-	if(setsockopt(apiServer.sockfd, SOL_SOCKET, SO_REUSEADDR, &en, sizeof(int)) < 0) {
+	if(setsockopt(apiServer.sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&en, sizeof(int)) < 0) {
 		// WARN
 		printf("[WARN] Failed to set socket option SO_REUSEADDR\n");
 	}
@@ -230,7 +278,14 @@ int heapi_create_server (uint8_t create_thread) {
 	listen(apiServer.sockfd, 4);
 	apiServer.status = APISERVER_STATE_CONNECTED;
     if(create_thread) {
-        err = pthread_create(&apiServer.thread_server_listener, NULL, heapi_server_listener, NULL);
+        #if defined(__linux__)
+            err = pthread_create(&apiServer.thread_server_listener, NULL, heapi_server_listener, NULL);
+        #elif defined(_WIN32)
+            apiServer.thread_server_listener = CreateThread(NULL, 0, heapi_server_listener, NULL, 0, NULL);
+            if(apiServer.thread_server_listener == NULL) {
+                err = -1;
+            }
+        #endif
     }
     return err;
 }
@@ -260,12 +315,24 @@ void heapi_cleanup () {
     for(int i = 0; i < MAX_API_CLIENT_COUNT; i++) {
         if(apiServer.clients[i].sockfd >= 0 && apiServer.clients[i].connected) {
             apiServer.clients[i].connected = 0;
-            shutdown(apiServer.clients[i].sockfd, SHUT_RDWR);
-            close(apiServer.clients[i].sockfd);
+            #if defined(__linux__)
+                shutdown(apiServer.clients[i].sockfd, SHUT_RDWR);
+                close(apiServer.clients[i].sockfd);
+            #elif defined(_WIN32)
+                shutdown(apiServer.clients[i].sockfd, SD_BOTH);
+                closesocket(apiServer.clients[i].sockfd);
+            #endif
         }
     }
     // Close the server
+#if defined(__linux__)
     shutdown(apiServer.sockfd, SHUT_RDWR);
     close(apiServer.sockfd);
     apiServer.sockfd = -1;
+#elif defined(_WIN32)
+    shutdown(apiServer.sockfd, SD_BOTH);
+    closesocket(apiServer.sockfd);
+    WSACleanup();
+#endif
+
 }

@@ -44,7 +44,7 @@ struct HEDev {
     wchar_t serial[64];
     uint8_t active;
     // hid path
-    char path[32];
+    char path[256];
     // Protocol
     uint8_t protocol;
 };

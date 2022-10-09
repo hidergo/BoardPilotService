@@ -1,5 +1,6 @@
 {
     "files.associations": {
         "hidapi.h": "c"
-    }
+    },
+    "cmake.configureOnOpen": true
 }

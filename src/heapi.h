@@ -1,9 +1,19 @@
 #ifndef __HEAPI_H
 #define __HEAPI_H
 #include <stdint.h>
+#if defined(_WIN32)
+#pragma comment (lib, "Ws2_32.lib")
+#pragma comment (lib, "Mswsock.lib")
+#pragma comment (lib, "AdvApi32.lib")
+#include <conio.h>
+#include <winsock2.h>
+#include <WS2tcpip.h>
+#include <Windows.h>
+#elif defined(__linux__)
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#endif
 #include "hedev.h"
 
 #define HEAPI_KEY "p*kG462jhJBY166EZLKxf9Du"
@@ -43,8 +53,13 @@ enum ApiCommand {
 
 // Api client structure
 struct HEApiClient {
+#if defined(__linux__)
     pthread_t thread_client_listener;
     int sockfd;
+#elif defined(_WIN32)
+    HANDLE thread_client_listener;
+    SOCKET sockfd;
+#endif
     struct sockaddr_in addrInfo;
     enum ApiClientType clientType;
     uint8_t connected;
@@ -54,8 +69,13 @@ struct HEApiClient {
 
 // API server structure
 struct HEApiServer {
+#if defined(__linux__)
     pthread_t thread_server_listener;
     int sockfd;
+#elif defined(_WIN32)
+    HANDLE thread_server_listener;
+    SOCKET sockfd;
+#endif
     uint16_t port;
     enum ApiServerState status;
     struct HEApiClient clients[MAX_API_CLIENT_COUNT];

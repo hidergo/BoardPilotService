@@ -29,6 +29,7 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
         printf("[WARNING] Could not open device\n");
         return -1;
     }
+    
     int err = hid_write(dev, buffer, len);
     if(err == -1) {
         printf("[ERROR] Failed to write to device: %ls\n", hid_error(dev));
@@ -47,7 +48,7 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
         if(device_list[i] == NULL) {
             struct HEDev *dev = malloc(sizeof(struct HEDev));
             dev->product = product;
-            strncpy(dev->path, info->path, 31);
+            strncpy(dev->path, info->path, 255);
             dev->active = 1;
             wcsncpy(dev->serial, info->serial_number, 63);
             if(dev->serial[0] == 0) {

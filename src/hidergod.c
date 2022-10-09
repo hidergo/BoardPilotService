@@ -2,11 +2,14 @@
 #include <hidapi.h>
 #include "hedev.h"
 #include "heapi.h"
-#include <wchar.h>
-#include <pthread.h>
+#if defined(__linux__)
 #include <unistd.h>
+#elif defined(_WIN32)
+#include <Windows.h>
+#endif
+#include <wchar.h>
 #include <signal.h>
-#include <libudev.h>
+
 
 #define MAX_STR 255
 
@@ -24,7 +27,8 @@ int main(int argc, char **argv)
 	signal(SIGINT, exit_handler);
     int err;
     printf("Starting hid:ergo daemon\n");
-    printf("* Defined devices: %i\n", PRODUCT_COUNT);
+    printf("* Defined devices: %i\n", (int)PRODUCT_COUNT);
+
    	hedev_print_products();
 
     printf("Starting API server...\n");
@@ -40,10 +44,14 @@ int main(int argc, char **argv)
 
 	// Init hedev
 	hedev_init();
-
+	
 	while(1) {
 		hedev_poll_usb_devices();
-		sleep(2);
+		#if defined(__linux__)
+			sleep(2);
+		#elif defined(_WIN32)
+			Sleep(2000);
+		#endif
 	}
 
 	cleanup();
