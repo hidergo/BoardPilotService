@@ -137,6 +137,7 @@ int hedev_poll_usb_devices () {
     struct hid_device_info *curdev = devs;
     char buff[64];
     while (curdev != NULL) {
+
         for(int i = 0; i < PRODUCT_COUNT; i++) {
             // Match to a device
             struct HEProduct *prod = (struct HEProduct *)&PRODUCT_LIST[i];
@@ -161,9 +162,22 @@ int hedev_poll_usb_devices () {
             // TODO: how to handle multiple devices without serial number?
             struct HEDev *dev = find_device(prod, curdev->serial_number, curdev->path);
             if(dev == NULL) {
-                
-                // Add new device
-                add_device(prod, curdev);
+                // Fix for Windows not allowing to read/write from/to a certain input device
+                int dev_open_read = 0;
+                hid_device *hiddev = hid_open_path(curdev->path);
+                if(hiddev != NULL) {
+                    hid_set_nonblocking(hiddev, 1);
+                    uint8_t buff[64];
+                    if(hid_read(hiddev, buff, 64) >= 0) {
+                        dev_open_read = 1;
+                    }
+                    hid_set_nonblocking(hiddev, 0);
+                    hid_close(hiddev);
+                }
+                if(dev_open_read) {
+                    // Add new device
+                    add_device(prod, curdev);
+                }
             }
             else {
                 // Update device active flag
