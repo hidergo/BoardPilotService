@@ -17,7 +17,7 @@
 
 // Package header
 PACK(struct hidergod_msg_header {
-    // Report ID (always 0)
+    // Report ID (always 0x05)
     uint8_t reportId;
     // Command
     uint8_t cmd;

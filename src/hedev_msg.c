@@ -4,7 +4,7 @@
 #include <time.h>
 
 int hedev_build_header (struct hidergod_msg_header *header, enum hidergod_cmd_t cmd, uint16_t size) {
-    header->reportId = 0;
+    header->reportId = 0x05;
     header->cmd = cmd;
     header->chunkOffset = 0;
     header->crc = 0;
