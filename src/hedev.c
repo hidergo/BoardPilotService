@@ -167,8 +167,8 @@ int hedev_poll_usb_devices () {
                 hid_device *hiddev = hid_open_path(curdev->path);
                 if(hiddev != NULL) {
                     hid_set_nonblocking(hiddev, 1);
-                    uint8_t buff[64];
-                    if(hid_read(hiddev, buff, 64) >= 0) {
+                    uint8_t buff[2] = {0x05, 0x00};
+                    if(hid_write(hiddev, buff, 2) >= 0) {
                         dev_open_read = 1;
                     }
                     hid_set_nonblocking(hiddev, 0);
