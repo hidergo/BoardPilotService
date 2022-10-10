@@ -8,7 +8,7 @@ int hedev_build_header (struct hidergod_msg_header *header, enum hidergod_cmd_t 
     header->cmd = cmd;
     header->chunkOffset = 0;
     header->crc = 0;
-    header->size = sizeof(struct hidergod_msg_header);
+    header->size = HIDERGOD_HEADER_SIZE + size;
     header->chunkSize = header->size;
     return 0;
 }
@@ -18,17 +18,21 @@ int hedev_set_time (struct HEDev *device) {
 
     time(&rawtime);
 
-    uint8_t buff[sizeof(struct hidergod_msg_header) + sizeof(struct hidergod_msg_set_value) + (sizeof(int) - 1)];
+    struct tm *_time = localtime(&rawtime);
+
+    uint8_t buff[sizeof(struct hidergod_msg_header) + sizeof(struct hidergod_msg_set_value) - 1 + (sizeof(int) * 2)];
 
     struct hidergod_msg_header *header = (struct hidergod_msg_header*)(buff + 0);
     struct hidergod_msg_set_value *msg = (struct hidergod_msg_set_value*)(buff + sizeof(struct hidergod_msg_header));
-    int *value = (int*)&msg->data;
 
-    hedev_build_header(header, HIDERGOD_CMD_SET_VALUE, sizeof(struct hidergod_msg_set_value) + (sizeof(int) - 1));
+    int32_t *msg_data = (int32_t*)&msg->data;
+
+    hedev_build_header(header, HIDERGOD_CMD_SET_VALUE, sizeof(struct hidergod_msg_set_value) - 1 + (sizeof(int) * 2));
     
     msg->key = HIDERGOD_VALUE_KEY_TIME;
-    msg->length = 4;
-    *value = (int)rawtime;
+    msg->length = sizeof(int32_t) * 2;
+    msg_data[0] = (int32_t)rawtime;
+    msg_data[1] = (int32_t)_time->tm_gmtoff;
 
     device_write(device, buff, sizeof(buff));
 

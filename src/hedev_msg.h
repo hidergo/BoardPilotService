@@ -31,6 +31,8 @@ PACK(struct hidergod_msg_header {
     uint16_t crc;
 });
 
+#define HIDERGOD_HEADER_SIZE sizeof(struct hidergod_msg_header)
+
 // Set value message
 PACK(struct hidergod_msg_set_value {
     // Key
