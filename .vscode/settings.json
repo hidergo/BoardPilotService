@@ -1,6 +1,7 @@
 {
     "files.associations": {
-        "hidapi.h": "c"
+        "hidapi.h": "c",
+        "hedev_msg.h": "c"
     },
     "cmake.configureOnOpen": true
 }
