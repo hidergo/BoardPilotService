@@ -34,7 +34,11 @@ int hedev_set_time (struct HEDev *device) {
     msg->key = HIDERGOD_VALUE_KEY_TIME;
     msg->length = sizeof(int32_t) * 2;
     msg_data[0] = (int32_t)rawtime;
+    #if defined(__linux__)
     msg_data[1] = (int32_t)_time->tm_gmtoff;
+    #elif defined(_WIN32)
+    msg_data[1] = (int32_t)0;
+    #endif
 
     device_write(device, buff, sizeof(buff));
 
