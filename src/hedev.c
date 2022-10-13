@@ -29,8 +29,9 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
         printf("[WARNING] Could not open device\n");
         return -1;
     }
-    
-    int err = hid_write(dev, buffer, len);
+    memset(report_buffer, 0, sizeof(report_buffer));
+    memcpy(report_buffer, buffer, len);
+    int err = hid_write(dev, report_buffer, sizeof(report_buffer));
     if(err == -1) {
         printf("[ERROR] Failed to write to device: %ls\n", hid_error(dev));
     }
@@ -168,7 +169,11 @@ int hedev_poll_usb_devices () {
                 if(hiddev != NULL) {
                     hid_set_nonblocking(hiddev, 1);
                     uint8_t buff[2] = {0x05, 0x00};
-                    if(hid_write(hiddev, buff, 2) >= 0) {
+                    memset(report_buffer, 0, sizeof(report_buffer));
+                    report_buffer[0] = 0x05;
+                    report_buffer[0] = 0x00;
+
+                    if(hid_write(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
                         dev_open_read = 1;
                     }
                     hid_set_nonblocking(hiddev, 0);

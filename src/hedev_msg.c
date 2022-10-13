@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+uint8_t report_buffer[HIDERGOD_REPORT_SIZE];
+
 int hedev_build_header (struct hidergod_msg_header *header, enum hidergod_cmd_t cmd, uint16_t size) {
     header->reportId = 0x05;
     header->cmd = cmd;

@@ -11,6 +11,9 @@
 #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
 #endif
 
+#define HIDERGOD_REPORT_SIZE        0x40
+extern uint8_t report_buffer[HIDERGOD_REPORT_SIZE];
+
 // HID MESSAGING
 
 #define HIDERGOD_VALUE_KEY_TIME     0x01
