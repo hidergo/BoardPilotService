@@ -171,7 +171,7 @@ int hedev_poll_usb_devices () {
                     uint8_t buff[2] = {0x05, 0x00};
                     memset(report_buffer, 0, sizeof(report_buffer));
                     report_buffer[0] = 0x05;
-                    report_buffer[0] = 0x00;
+                    report_buffer[1] = 0x00;
 
                     if(hid_write(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
                         dev_open_read = 1;
