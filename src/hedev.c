@@ -167,16 +167,18 @@ int hedev_poll_usb_devices () {
                 int dev_open_read = 0;
                 hid_device *hiddev = hid_open_path(curdev->path);
                 if(hiddev != NULL) {
-                    hid_set_nonblocking(hiddev, 1);
-                    uint8_t buff[2] = {0x05, 0x00};
                     memset(report_buffer, 0, sizeof(report_buffer));
                     report_buffer[0] = 0x05;
-                    report_buffer[0] = 0x00;
+                    report_buffer[1] = 0x00;
 
                     if(hid_write(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
                         dev_open_read = 1;
+                        //printf("%X %X %X %X\n", report_buffer[0], report_buffer[1], report_buffer[2], report_buffer[3]);
                     }
-                    hid_set_nonblocking(hiddev, 0);
+                    else {
+                        wchar_t *errmsg = hid_error(hiddev);
+                        printf("ERR CONN %s: %ls\n", prod->product_string, errmsg);
+                    }
                     hid_close(hiddev);
                 }
                 if(dev_open_read) {
