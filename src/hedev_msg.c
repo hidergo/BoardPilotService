@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include <time.h>
 
+#if defined(_WIN32)
+#define HEDEV_USE_CUSTOM_GMT_OFFSET
+#elif defined(__linux__)
+
+#endif
+
 uint8_t report_buffer[HIDERGOD_REPORT_SIZE];
 
 int hedev_build_header (struct hidergod_msg_header *header, enum hidergod_cmd_t cmd, uint16_t size) {
@@ -14,6 +20,30 @@ int hedev_build_header (struct hidergod_msg_header *header, enum hidergod_cmd_t 
     header->chunkSize = header->size;
     return 0;
 }
+
+#ifdef HEDEV_USE_CUSTOM_GMT_OFFSET
+/**
+ * @brief Get timezone offset. tm_gmtoff not available for windows.
+ * @ref https://stackoverflow.com/a/44063597
+ * @return int 
+ */
+int _hedev_get_gmt_offset () {
+    time_t gmt, rawtime = time(NULL);
+    struct tm *ptm;
+
+#if !defined(_WIN32)
+    struct tm gbuf;
+    ptm = gmtime_r(&rawtime, &gbuf);
+#else
+    ptm = gmtime(&rawtime);
+#endif
+    // Request that mktime() looksup dst in timezone database
+    ptm->tm_isdst = -1;
+    gmt = mktime(ptm);
+
+    return (int)difftime(rawtime, gmt);
+}
+#endif
 
 int hedev_set_time (struct HEDev *device) {
     time_t rawtime;
@@ -34,10 +64,10 @@ int hedev_set_time (struct HEDev *device) {
     msg->key = HIDERGOD_VALUE_KEY_TIME;
     msg->length = sizeof(int32_t) * 2;
     msg_data[0] = (int32_t)rawtime;
-    #if defined(__linux__)
+    #ifndef HEDEV_USE_CUSTOM_GMT_OFFSET
     msg_data[1] = (int32_t)_time->tm_gmtoff;
-    #elif defined(_WIN32)
-    msg_data[1] = (int32_t)0;
+    #else
+    msg_data[1] = (int32_t)_hedev_get_gmt_offset();
     #endif
 
     device_write(device, buff, sizeof(buff));
