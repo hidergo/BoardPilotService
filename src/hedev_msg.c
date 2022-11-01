@@ -17,7 +17,7 @@ int hedev_build_header (struct hidergod_msg_header *header, enum hidergod_cmd_t 
     header->chunkOffset = 0;
     header->crc = 0;
     header->size = HIDERGOD_HEADER_SIZE + size;
-    header->chunkSize = header->size;
+    header->chunkSize = HIDERGOD_REPORT_SIZE;
     return 0;
 }
 

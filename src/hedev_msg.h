@@ -11,7 +11,7 @@
 #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
 #endif
 
-#define HIDERGOD_REPORT_SIZE        0x14
+#define HIDERGOD_REPORT_SIZE        0x1F
 extern uint8_t report_buffer[HIDERGOD_REPORT_SIZE];
 
 // HID MESSAGING
@@ -30,8 +30,8 @@ PACK(struct hidergod_msg_header {
     uint8_t chunkSize;
     // Message chunk offset
     uint16_t chunkOffset;
-    // CRC16
-    uint16_t crc;
+    // CRC8
+    uint8_t crc;
 });
 
 #define HIDERGOD_HEADER_SIZE sizeof(struct hidergod_msg_header)

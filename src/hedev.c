@@ -7,11 +7,21 @@
 // hid:ergo products, used to find devices
 const struct HEProduct PRODUCT_LIST[] = {
     {
+        // hid:ergo Disconnect MK1
         0x1915,     // VID 
         0x520f,     // PID
         "hid:ergo", // Manufacturer
-        "split",    // Product name
-        "hid:ergo split", // Product string for bluetooth
+        "Disconnect MK1",    // Product name
+        "Disconnect MK1", // Product string for bluetooth
+        1           // Revision
+    },
+    {
+        // hid:ergo Disconnect MK1 (left)
+        0x1915,     // VID 
+        0x5210,     // PID
+        "hid:ergo", // Manufacturer
+        "Disconnect MK1(L)",    // Product name
+        "Disconnect MK1",       // Product string for bluetooth (never connected)
         1           // Revision
     }
 };
