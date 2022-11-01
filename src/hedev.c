@@ -35,7 +35,7 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
 #if defined(_WIN32)
     int err = hid_set_output_report(dev, report_buffer, sizeof(report_buffer));
 #elif defined(__linux__)
-    int err = dev, report_buffer, sizeof(report_buffer));
+    int err = hid_write(dev, report_buffer, sizeof(report_buffer));
 #endif
     if(err < 0) {
         printf("[ERROR] Failed to write to device: %ls\n", hid_error(dev));
