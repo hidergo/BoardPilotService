@@ -11,12 +11,10 @@
 #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
 #endif
 
-#define HIDERGOD_REPORT_SIZE        0x1F
+#define HIDERGOD_REPORT_SIZE        0x20
 extern uint8_t report_buffer[HIDERGOD_REPORT_SIZE];
 
 // HID MESSAGING
-
-#define HIDERGOD_VALUE_KEY_TIME     0x01
 
 // Package header
 PACK(struct hidergod_msg_header {
@@ -35,8 +33,9 @@ PACK(struct hidergod_msg_header {
 });
 
 #define HIDERGOD_HEADER_SIZE sizeof(struct hidergod_msg_header)
+#define HIDERGOD_REPORT_DATA_SIZE (HIDERGOD_REPORT_SIZE - HIDERGOD_HEADER_SIZE)
 
-// Set value message
+// Generic set value message
 PACK(struct hidergod_msg_set_value {
     // Key
     uint16_t key;
@@ -46,11 +45,15 @@ PACK(struct hidergod_msg_set_value {
     uint8_t data;
 });
 
-
 // Command
 enum hidergod_cmd_t {
     HIDERGOD_CMD_SET_VALUE = 0x01
 };
+
+enum hidergod_value_key {
+    HIDERGOD_VALUE_KEY_TIME = 0x01
+};
+
 
 /**
  * @brief Initializes a header. Sets cmd to `cmd` and message size to `size`
