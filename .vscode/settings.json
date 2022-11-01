@@ -4,7 +4,8 @@
         "hedev_msg.h": "c",
         "hidsdi.h": "c",
         "hidapi_hidsdi.h": "c",
-        "hidclass.h": "c"
+        "hidclass.h": "c",
+        "hidapi_cfgmgr32.h": "c"
     },
     "cmake.configureOnOpen": true
 }

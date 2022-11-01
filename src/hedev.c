@@ -31,12 +31,12 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
     }
     memset(report_buffer, 0, sizeof(report_buffer));
     memcpy(report_buffer, buffer, len);
-    int err = hid_write(dev, report_buffer, sizeof(report_buffer));
-    if(err == -1) {
+    int err = hid_set_output_report(dev, report_buffer, sizeof(report_buffer));
+    if(err < 0) {
         printf("[ERROR] Failed to write to device: %ls\n", hid_error(dev));
     }
     else {
-        printf("[DEBUG] Wrote to %s\n", device->path);
+        //printf("[DEBUG] Wrote to %s\n", device->path);
     }
 
     hid_close(dev);
@@ -171,13 +171,11 @@ int hedev_poll_usb_devices () {
                     report_buffer[0] = 0x05;
                     report_buffer[1] = 0x00;
 
-                    if(hid_write(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
+                    if(hid_set_output_report(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
                         dev_open_read = 1;
-                        //printf("%X %X %X %X\n", report_buffer[0], report_buffer[1], report_buffer[2], report_buffer[3]);
                     }
                     else {
                         wchar_t *errmsg = hid_error(hiddev);
-                        printf("ERR CONN %s: %ls\n", prod->product_string, errmsg);
                     }
                     hid_close(hiddev);
                 }

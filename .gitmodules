@@ -1,6 +1,6 @@
-[submodule "hidapi"]
-	path = hidapi
-	url = https://github.com/libusb/hidapi
 [submodule "cJSON"]
 	path = cJSON
 	url = https://github.com/DaveGamble/cJSON
+[submodule "hidapi"]
+	path = hidapi
+	url = https://github.com/osmakari/hidapi
