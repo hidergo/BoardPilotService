@@ -73,14 +73,4 @@ void hedev_print_products ();
  */
 int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len);
 
-/**
- * @brief Write chunked message
- * 
- * @param device 
- * @param header 
- * @param data 
- * @return int 
- */
-int device_write_message (struct HEDev *device, struct hidergod_msg_header *header, uint8_t *data);
-
 #endif

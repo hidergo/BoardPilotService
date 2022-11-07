@@ -74,5 +74,16 @@ int hedev_build_header (struct hidergod_msg_header *header, enum hidergod_cmd_t 
 int hedev_set_time (struct HEDev *device);
 
 
+/**
+ * @brief Write chunked message
+ * 
+ * @param device 
+ * @param header 
+ * @param data 
+ * @return int 
+ */
+int device_write_message (struct HEDev *device, struct hidergod_msg_header *header, uint8_t *data);
+
+
 
 #endif

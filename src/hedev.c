@@ -33,8 +33,6 @@ struct HEDev *device_list[HED_DEVICE_ALLOC_SIZE];
 // Live device count
 int device_count = 0;
 
-uint8_t msg_buffer[HIDERGOD_REPORT_SIZE];
-
 int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
     hid_device *dev = hid_open_path(device->path);
     if(dev == NULL) {
@@ -58,37 +56,6 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
 
     hid_close(dev);
     return 0;
-}
-
-int device_write_message (struct HEDev *device, struct hidergod_msg_header *header, uint8_t *data) {
-    memset(msg_buffer, 0, sizeof(msg_buffer));
-    if(header->size <= HIDERGOD_REPORT_DATA_SIZE) {
-        // No need for chunks - build message
-        header->chunkOffset = 0;
-        header->chunkSize = header->size;
-        memcpy(msg_buffer, header, sizeof(struct hidergod_msg_header));
-        memcpy(msg_buffer + sizeof(struct hidergod_msg_header), data, header->size);
-
-        return device_write(device, msg_buffer, HIDERGOD_REPORT_SIZE);
-    }
-
-    int err = 0;
-    // Chunk the message
-    int bytes_left = header->size;
-    while(bytes_left > 0) {
-        header->chunkOffset = header->size - bytes_left;
-        header->chunkSize = bytes_left <= HIDERGOD_REPORT_DATA_SIZE ? bytes_left : HIDERGOD_REPORT_DATA_SIZE;
-        memcpy(msg_buffer, header, sizeof(struct hidergod_msg_header));
-        memcpy(msg_buffer + sizeof(struct hidergod_msg_header), data, header->size);
-        err = device_write(device, msg_buffer, HIDERGOD_REPORT_SIZE);
-        if(err < 0) {
-            break;
-        }
-
-        bytes_left -= header->chunkSize;
-    }
-
-    return err;
 }
 
 int add_device (struct HEProduct *product, struct hid_device_info *info) {
