@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #if defined(_WIN32)
 #define HEDEV_USE_CUSTOM_GMT_OFFSET
@@ -16,8 +17,9 @@ int hedev_build_header (struct hidergod_msg_header *header, enum hidergod_cmd_t 
     header->cmd = cmd;
     header->chunkOffset = 0;
     header->crc = 0;
-    header->size = size;
-    header->chunkSize = size <= HIDERGOD_REPORT_DATA_SIZE ? size : HIDERGOD_REPORT_DATA_SIZE;
+    // Short messages are padded to HIDERGOD_REPORT_DATA_SIZE
+    header->size = size < HIDERGOD_REPORT_DATA_SIZE ? HIDERGOD_REPORT_DATA_SIZE : size;
+    header->chunkSize = header->size <= HIDERGOD_REPORT_DATA_SIZE ? header->size : HIDERGOD_REPORT_DATA_SIZE;
     return 0;
 }
 
@@ -75,6 +77,29 @@ int hedev_set_time (struct HEDev *device) {
     return 0;
 }
 
+int hedev_set_keymap (struct HEDev *device) {
+
+    struct hidergod_msg_header header;
+    hedev_build_header(&header, HIDERGOD_CMD_SET_KEYMAP, sizeof(struct hidergod_msg_set_keymap));
+
+    uint8_t buff[sizeof(struct hidergod_msg_set_keymap)];
+
+    struct hidergod_msg_set_keymap *msg = (struct hidergod_msg_set_keymap*)(buff);
+    msg->layer_count = 3;
+    msg->key_count = 70;
+    int i = 0;
+    for(int l = 0; l < msg->layer_count; l++) {
+        for(int k = 0; k < msg->key_count; k++) {
+            msg->keys[i] = (l << 8) | k;
+            i++;
+        }
+    }
+
+    device_write_message(device, &header, buff);
+
+    return 0;
+}
+
 uint8_t msg_buffer[HIDERGOD_REPORT_SIZE];
 
 int device_write_message (struct HEDev *device, struct hidergod_msg_header *header, uint8_t *data) {
@@ -96,7 +121,7 @@ int device_write_message (struct HEDev *device, struct hidergod_msg_header *head
         header->chunkOffset = header->size - bytes_left;
         header->chunkSize = bytes_left <= HIDERGOD_REPORT_DATA_SIZE ? bytes_left : HIDERGOD_REPORT_DATA_SIZE;
         memcpy(msg_buffer, header, sizeof(struct hidergod_msg_header));
-        memcpy(msg_buffer + sizeof(struct hidergod_msg_header), data, header->size);
+        memcpy(msg_buffer + sizeof(struct hidergod_msg_header), data + header->chunkOffset, header->chunkSize);
         err = device_write(device, msg_buffer, HIDERGOD_REPORT_SIZE);
         if(err < 0) {
             break;

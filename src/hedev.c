@@ -81,6 +81,8 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             printf("Device %s %s (%X:%X) connected\n", dev->product->manufacturer, dev->product->product, dev->product->vendorid, dev->product->productid);
             // Set device time
             hedev_set_time(dev);
+            // Testing keymap
+            //hedev_set_keymap(dev);
             break;
         }
     }
@@ -182,9 +184,17 @@ int hedev_poll_usb_devices () {
                 int dev_open_read = 0;
                 hid_device *hiddev = hid_open_path(curdev->path);
                 if(hiddev != NULL) {
+                    struct hidergod_msg_header open_header = {
+                        .reportId = 0x05,
+                        .cmd = 0x00,
+                        .chunkOffset = 0x00,
+                        .crc = 0x00,
+                        .size = 0x00,
+                        .chunkSize = 0x00
+                    };
+                    hedev_build_header(&open_header, 0x00, 0x00);
                     memset(report_buffer, 0, sizeof(report_buffer));
-                    report_buffer[0] = 0x05;
-                    report_buffer[1] = 0x00;
+                    memcpy(report_buffer, &open_header, sizeof(struct hidergod_msg_header));
 
                 #if defined(_WIN32)
                     if(hid_set_output_report(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
