@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "heapi.h"
-#include "hedev_msg.h"
+#include "zmk_control.h"
 
 // hid:ergo products, used to find devices
 const struct HEProduct PRODUCT_LIST[] = {
@@ -80,9 +80,10 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             heapi_trigger_event(APIEVENT_DEVICE_CONNECTED, dev);
             printf("Device %s %s (%X:%X) connected\n", dev->product->manufacturer, dev->product->product, dev->product->vendorid, dev->product->productid);
             // Set device time
-            hedev_set_time(dev);
-            // Testing keymap
-            //hedev_set_keymap(dev);
+            zmk_control_msg_set_time(dev);
+            
+            // Set sensitivity
+            zmk_control_msg_set_mouse_sensitivity(dev, 128);
             break;
         }
     }
@@ -184,17 +185,10 @@ int hedev_poll_usb_devices () {
                 int dev_open_read = 0;
                 hid_device *hiddev = hid_open_path(curdev->path);
                 if(hiddev != NULL) {
-                    struct hidergod_msg_header open_header = {
-                        .reportId = 0x05,
-                        .cmd = 0x00,
-                        .chunkOffset = 0x00,
-                        .crc = 0x00,
-                        .size = 0x00,
-                        .chunkSize = 0x00
-                    };
-                    hedev_build_header(&open_header, 0x00, 0x00);
+                    struct zmk_control_msg_header open_header;
+                    zmk_control_build_header(&open_header, ZMK_CONTROL_CMD_CONNECT, 0x00);
                     memset(report_buffer, 0, sizeof(report_buffer));
-                    memcpy(report_buffer, &open_header, sizeof(struct hidergod_msg_header));
+                    memcpy(report_buffer, &open_header, sizeof(struct zmk_control_msg_header));
 
                 #if defined(_WIN32)
                     if(hid_set_output_report(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
@@ -204,7 +198,7 @@ int hedev_poll_usb_devices () {
                         dev_open_read = 1;
                     }
                     else {
-                        wchar_t *errmsg = hid_error(hiddev);
+                        const wchar_t *errmsg = hid_error(hiddev);
                     }
                     hid_close(hiddev);
                 }
