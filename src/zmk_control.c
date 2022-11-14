@@ -69,7 +69,7 @@ int zmk_control_msg_set_time (struct HEDev *device) {
     msg->key = ZMK_CONFIG_KEY_DATETIME;
     msg->size = sizeof(int32_t) * 2;
     msg_data[0] = (int32_t)rawtime;
-    #ifndef HEDEV_USE_CUSTOM_GMT_OFFSET
+    #ifndef ZMK_CONTROL_USE_CUSTOM_GMT_OFFSET
     msg_data[1] = (int32_t)_time->tm_gmtoff;
     #else
     msg_data[1] = (int32_t)_zmk_control_get_gmt_offset();

@@ -31,7 +31,7 @@ enum zmk_control_cmd_t {
 
 // Package header
 // TODO: Do the messages need header on every chunk? large overhead but safer transfer...
-struct __attribute__((packed)) zmk_control_msg_header {
+PACK(struct zmk_control_msg_header {
     // Report ID (should always be 0x05)
     uint8_t report_id; // Not received for some reason?
     // Command (enum zmk_control_cmd_t)
@@ -44,13 +44,13 @@ struct __attribute__((packed)) zmk_control_msg_header {
     uint16_t chunk_offset;
     // CRC8
     uint8_t crc;
-};
+});
 
 // Size of the message without header
 #define ZMK_CONTROL_REPORT_DATA_SIZE (ZMK_CONTROL_REPORT_SIZE - sizeof(struct zmk_control_msg_header))
 
 // Set config message structure
-struct __attribute__((packed)) zmk_control_msg_set_config {
+PACK(struct zmk_control_msg_set_config {
     // Config key. config.h/enum zmk_config_key
     uint16_t key;
     // Config size
@@ -59,17 +59,17 @@ struct __attribute__((packed)) zmk_control_msg_set_config {
     uint8_t save;
     // Data. Represented as u8 but will be allocated to contain variable of length "size"
     uint8_t data;
-};
+});
 
 // Get config message structure
-struct __attribute__((packed)) zmk_control_msg_get_config {
+PACK(struct zmk_control_msg_get_config {
     // Config key. config.h/enum zmk_config_key
     uint16_t key;
     // Config size
     uint16_t size;
     // Data. Represented as u8 but will be allocated to contain variable of length "size"
     uint8_t data;
-};
+});
 
 
 /**

@@ -35,6 +35,7 @@ int device_count = 0;
 
 int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
     hid_device *dev = hid_open_path(device->path);
+    struct hid_device_info *devinfo = hid_get_device_info(dev);
     if(dev == NULL) {
         printf("[WARNING] Could not open device\n");
         return -1;
@@ -42,10 +43,17 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
     memset(report_buffer, 0, sizeof(report_buffer));
     memcpy(report_buffer, buffer, len);
 
+    int err;
 #if defined(_WIN32)
-    int err = hid_set_output_report(dev, report_buffer, sizeof(report_buffer));
+    if(devinfo->bus_type == HID_API_BUS_BLUETOOTH) {
+        err = hid_set_output_report(dev, report_buffer, sizeof(report_buffer));
+    }
+    else {
+        err = hid_write(dev, report_buffer, sizeof(report_buffer));
+    }
+    
 #elif defined(__linux__)
-    int err = hid_write(dev, report_buffer, sizeof(report_buffer));
+    err = hid_write(dev, report_buffer, sizeof(report_buffer));
 #endif
     if(err < 0) {
         printf("[ERROR] Failed to write to device: %ls\n", hid_error(dev));
@@ -161,19 +169,19 @@ int hedev_poll_usb_devices () {
             // Match to a device
             struct HEProduct *prod = (struct HEProduct *)&PRODUCT_LIST[i];
             uint8_t dev_ok = 0;
-            if(curdev->product_id == 0x0000 && curdev->vendor_id == 0x0000) {
-                // Bluetooth device - match product/manufacturer name
+
+            // USB device - match product/vendor ID
+            if((uint16_t)curdev->product_id == prod->productid && (uint16_t)curdev->vendor_id == prod->vendorid) {
+                dev_ok = 1;
+            }
+            else {
+                // Might be bluetooth device - match product/manufacturer name
                 snprintf(buff, 63, "%ls", curdev->product_string);
                 if(strcmp(buff, prod->product_string) == 0) {
                     dev_ok = 1;
                 }
             }
-            else {
-                // USB device - match product/vendor ID
-                if((uint16_t)curdev->product_id == prod->productid && (uint16_t)curdev->vendor_id == prod->vendorid) {
-                    dev_ok = 1;
-                }
-            }
+
             // Device not ok
             if(!dev_ok)
                 continue;
@@ -191,16 +199,25 @@ int hedev_poll_usb_devices () {
                     memcpy(report_buffer, &open_header, sizeof(struct zmk_control_msg_header));
 
                 #if defined(_WIN32)
-                    if(hid_set_output_report(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
-                #elif defined(__linux__)
-                    if(hid_write(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
-                #endif
-                        dev_open_read = 1;
+                    if(curdev->bus_type == HID_API_BUS_BLUETOOTH) {
+                        if(hid_set_output_report(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
+                             dev_open_read = 1;
+                        }
                     }
                     else {
-                        const wchar_t *errmsg = hid_error(hiddev);
+                        if(hid_write(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
+                            dev_open_read = 1;
+                        }
                     }
+                #elif defined(__linux__)
+                    if(hid_write(hiddev, report_buffer, sizeof(report_buffer)) >= 0) {
+                        dev_open_read = 1;
+                    }
+                #endif
                     hid_close(hiddev);
+                }
+                else {
+                    //printf("Could not open device");
                 }
                 if(dev_open_read) {
                     // Add new device
