@@ -54,48 +54,50 @@ int zmk_control_msg_set_time (struct HEDev *device) {
 
     struct tm *_time = localtime(&rawtime);
 
-    uint8_t buff[64];
+    PACK(struct {
+        int32_t timestamp;
+        int32_t offset;
+    }) _time_msg;
 
-    struct zmk_control_msg_header header;
-    zmk_control_build_header(&header, ZMK_CONTROL_CMD_SET_CONFIG, sizeof(struct zmk_control_msg_set_config) - 1 + (sizeof(int32_t) * 2));
-
-    struct zmk_control_msg_set_config *msg = (struct zmk_control_msg_set_config*)(buff);
-
-    int32_t *msg_data = (int32_t*)&msg->data;
-
-    // Do not save datetime
-    msg->save = 0;
-
-    msg->key = ZMK_CONFIG_KEY_DATETIME;
-    msg->size = sizeof(int32_t) * 2;
-    msg_data[0] = (int32_t)rawtime;
+    _time_msg.timestamp = rawtime;
     #ifndef ZMK_CONTROL_USE_CUSTOM_GMT_OFFSET
-    msg_data[1] = (int32_t)_time->tm_gmtoff;
+    _time_msg.offset = (int32_t)_time->tm_gmtoff;
     #else
-    msg_data[1] = (int32_t)_zmk_control_get_gmt_offset();
+    _time_msg.offset = (int32_t)_zmk_control_get_gmt_offset();
     #endif
 
-    zmk_control_write_message(device, &header, buff);
-
-    return 0;
+    // Do not save datetime
+    return zmk_control_set_config(device, ZMK_CONFIG_KEY_DATETIME, &_time_msg, sizeof(_time_msg), 0);
 }
 
 int zmk_control_msg_set_mouse_sensitivity (struct HEDev *device, uint8_t sensitivity) {
-    uint8_t buff[64];
 
+    uint8_t sens = sensitivity;
+
+    return zmk_control_set_config(device, ZMK_CONFIG_KEY_MOUSE_SENSITIVITY, &sens, sizeof(sens), 1);
+}
+
+int zmk_control_msg_set_iqs5xx_registers (struct HEDev *device, struct iqs5xx_reg_config config, uint8_t save) {
+    struct iqs5xx_reg_config conf = config;
+
+    return zmk_control_set_config(device, ZMK_CONFIG_CUSTOM_IQS5XX_REGS, &conf, sizeof(conf), save);
+}
+
+int zmk_control_set_config (struct HEDev *device, uint16_t key, void *data, uint16_t len, uint8_t save) {
+    // Output buffer
+    uint8_t buff[4092];
+
+    // Header
     struct zmk_control_msg_header header;
-    zmk_control_build_header(&header, ZMK_CONTROL_CMD_SET_CONFIG, sizeof(struct zmk_control_msg_set_config) - 1 + (sizeof(uint8_t)));
+    zmk_control_build_header(&header, ZMK_CONTROL_CMD_SET_CONFIG, sizeof(struct zmk_control_msg_set_config) - 1 + len);
 
     struct zmk_control_msg_set_config *msg = (struct zmk_control_msg_set_config*)(buff);
-
     uint8_t *msg_data = (uint8_t*)&msg->data;
-
-    // Save mouse sensitivity
-    msg->save = 1;
-
-    msg->key = ZMK_CONFIG_KEY_MOUSE_SENSITIVITY;
-    msg->size = sizeof(uint8_t);
-    *msg_data = sensitivity;
+    // Set save flag
+    msg->save = save;
+    msg->key = key;
+    msg->size = len;
+    memcpy(msg_data, data, len);
 
     zmk_control_write_message(device, &header, buff);
 

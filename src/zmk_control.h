@@ -10,6 +10,8 @@
 #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
 #endif
 
+#include "hedef.h"
+
 // Maximum report size including 1 byte of report ID
 #define ZMK_CONTROL_REPORT_SIZE     0x20
 
@@ -108,18 +110,34 @@ enum zmk_config_key {
     // --------------------------------------------------------------
 
     // (int32_t[2]) [0] Unix timestamp of time, [1] timezone in seconds
-    ZMK_CONFIG_KEY_DATETIME =               0x4000
+    ZMK_CONFIG_KEY_DATETIME =               0x4000,
 
 
     // --------------------------------------------------------------
     // 0x8000 - 0xFFFF: Custom fields
     // Fields that should be used if custom fields are needed
     // --------------------------------------------------------------
+    // hid:ergo device specific fields
+    // IQS5XX register configuration
+    ZMK_CONFIG_CUSTOM_IQS5XX_REGS =         0x8001,
 
 };
 
 int zmk_control_build_header (struct zmk_control_msg_header *header, enum zmk_control_cmd_t cmd, uint16_t size);
 int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_header *header, uint8_t *data);
+
+/**
+ * @brief Write device config field
+ * 
+ * @param device 
+ * @param key 
+ * @param data 
+ * @param len 
+ * @param save 
+ * @return int 
+ */
+int zmk_control_set_config (struct HEDev *device, uint16_t key, void *data, uint16_t len, uint8_t save);
+
 /**
  * @brief Sets the device time
  * 
@@ -135,5 +153,15 @@ int zmk_control_msg_set_time (struct HEDev *device);
  * @return int 
  */
 int zmk_control_msg_set_mouse_sensitivity (struct HEDev *device, uint8_t sensitivity);
+
+/**
+ * @brief Sets the iqs5xx registers
+ * 
+ * @param device 
+ * @param config 
+ * @param save 
+ * @return int 
+ */
+int zmk_control_msg_set_iqs5xx_registers (struct HEDev *device, struct iqs5xx_reg_config config, uint8_t save);
 
 #endif

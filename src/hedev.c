@@ -89,9 +89,31 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             printf("Device %s %s (%X:%X) connected\n", dev->product->manufacturer, dev->product->product, dev->product->vendorid, dev->product->productid);
             // Set device time
             zmk_control_msg_set_time(dev);
+
+            // TESTING
             
             // Set sensitivity
-            zmk_control_msg_set_mouse_sensitivity(dev, 128);
+            //zmk_control_msg_set_mouse_sensitivity(dev, 128);
+
+            // Set trackpad config
+            struct iqs5xx_reg_config tc = {
+                .activeRefreshRate =         10,
+                .idleRefreshRate =           50,
+                .singleFingerGestureMask =   0b11,
+                .multiFingerGestureMask =    0b11,
+                .tapTime =                   150,
+                .tapDistance =               25,
+                .touchMultiplier =           0,
+                .debounce =                  0,
+                .i2cTimeout =                4, 
+                .filterSettings =            0b11,
+                .filterDynBottomBeta =        5,
+                .filterDynLowerSpeed =        6,
+                .filterDynUpperSpeed =        200,
+                .initScrollDistance =        100
+            };
+
+            zmk_control_msg_set_iqs5xx_registers(dev, tc, 0);
             break;
         }
     }
