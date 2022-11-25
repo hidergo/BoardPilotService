@@ -67,6 +67,41 @@ Server response:
 }
 ```
 
+**APICMD_SET_IQS_REGS**
+
+Set IQS5xx (trackpad) registers:
+```
+{
+    cmd:    0x40,
+    device: string,
+    save:   boolean,
+    regs: {
+        activeRefreshRate?:         number,
+        idleRefreshRate?:           number,
+        singleFingerGestureMask?:   number,
+        multiFingerGestureMask?:    number,
+        tapTime?:                   number,
+        tapDistance?:               number,
+        touchMultiplier?:           number,
+        debounce?:                  number,
+        i2cTimeout?:                number,
+        filterSettings?:            number,
+        filterDynBottomBeta?:       number,
+        filterDynLowerSpeed?:       number,
+        filterDynUpperSpeed?:       number
+    },
+    reqid: number
+}
+```
+Server response:
+```
+{
+    cmd:    0x40,
+    status: boolean,
+    reqid:  number
+}
+```
+
 ---
 
 List of messages which API may send to client (not requested):

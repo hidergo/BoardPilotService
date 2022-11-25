@@ -96,6 +96,7 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             //zmk_control_msg_set_mouse_sensitivity(dev, 128);
 
             // Set trackpad config
+            /*
             struct iqs5xx_reg_config tc = {
                 .activeRefreshRate =         10,
                 .idleRefreshRate =           50,
@@ -114,6 +115,7 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             };
 
             zmk_control_msg_set_iqs5xx_registers(dev, tc, 0);
+            */
             break;
         }
     }
@@ -131,7 +133,7 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
 struct HEDev *find_device (struct HEProduct *product, const wchar_t *serial, const char *path) {
     for(int i = 0; i < HED_DEVICE_ALLOC_SIZE; i++) {
         if(device_list[i] != NULL) {
-            if(product == device_list[i]->product) {
+            if(product == NULL || product == device_list[i]->product) {
                 if(serial == NULL) {
                     // Check hid path
                     if(strcmp(path, device_list[i]->path) == 0) {

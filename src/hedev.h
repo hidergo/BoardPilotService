@@ -73,4 +73,6 @@ void hedev_print_products ();
  */
 int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len);
 
+struct HEDev *find_device (struct HEProduct *product, const wchar_t *serial, const char *path);
+
 #endif

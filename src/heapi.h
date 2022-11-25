@@ -46,6 +46,8 @@ enum ApiCommand {
     APICMD_REGISTER =       0x01,
     APICMD_DEVICES =        0x10,
 
+    APICMD_SET_IQS_REGS =   0x40,
+
     // Events
     APICMD_EVENT =          0x80
 
