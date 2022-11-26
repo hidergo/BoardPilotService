@@ -35,11 +35,11 @@ int device_count = 0;
 
 int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
     hid_device *dev = hid_open_path(device->path);
-    struct hid_device_info *devinfo = hid_get_device_info(dev);
     if(dev == NULL) {
         printf("[WARNING] Could not open device\n");
         return -1;
     }
+    struct hid_device_info *devinfo = hid_get_device_info(dev);
     memset(report_buffer, 0, sizeof(report_buffer));
     memcpy(report_buffer, buffer, len);
 
@@ -62,6 +62,58 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
         //printf("[DEBUG] Wrote to %s\n", device->path);
     }
 
+    hid_close(dev);
+    return 0;
+}
+
+int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
+    hid_device *dev = hid_open_path(device->path);
+    if(dev == NULL) {
+        printf("[WARNING] Could not open device\n");
+        return -1;
+    }
+    struct hid_device_info *devinfo = hid_get_device_info(dev);
+    memset(report_buffer, 0, sizeof(report_buffer));
+    memcpy(report_buffer, buffer, len);
+
+    int err;
+#if defined(_WIN32)
+    if(devinfo->bus_type == HID_API_BUS_BLUETOOTH) {
+        err = hid_set_output_report(dev, report_buffer, sizeof(report_buffer));
+    }
+    else {
+        err = hid_write(dev, report_buffer, sizeof(report_buffer));
+    }
+    
+#elif defined(__linux__)
+    err = hid_write(dev, report_buffer, sizeof(report_buffer));
+#endif
+    if(err < 0) {
+        printf("[ERROR] Failed to write to device: %ls\n", hid_error(dev));
+    }
+    else {
+        //printf("[DEBUG] Wrote to %s\n", device->path);
+    }
+
+#if defined(_WIN32)
+    if(devinfo->bus_type == HID_API_BUS_BLUETOOTH) {
+        err = hid_get_input_report(dev, report_buffer, sizeof(report_buffer));
+    }
+    else {
+        err = hid_read(dev, report_buffer, sizeof(report_buffer));
+    }
+    
+
+
+#elif defined(__linux__)
+    err = hid_read(dev, buffer, len);
+#endif
+    if(err < 0) {
+        printf("[ERROR] Failed to read from device: %ls\n", hid_error(dev));
+    }
+    else {
+        printf("[DEBUG] read from %s %i\n", device->path, err);
+    }
     hid_close(dev);
     return 0;
 }
@@ -116,6 +168,26 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
 
             zmk_control_msg_set_iqs5xx_registers(dev, tc, 0);
             */
+            uint8_t buff[128];
+            struct zmk_control_msg_header *hdr = (struct zmk_control_msg_header *)buff;
+            hdr->report_id = 0x05;
+            hdr->cmd = ZMK_CONTROL_CMD_GET_CONFIG;
+            hdr->crc = 0;
+            hdr->chunk_offset = 0;
+            hdr->chunk_size = sizeof(struct zmk_control_msg_get_config);
+            hdr->size = hdr->chunk_size;
+            struct zmk_control_msg_get_config *conf = buff + (sizeof(struct zmk_control_msg_header));
+            conf->key = ZMK_CONFIG_KEY_DATETIME;
+            conf->size = 128;
+            conf->data = 0;
+
+            device_read(dev, buff, 32);
+
+            printf("RECV: \n");
+            for(int i = 0; i < 32; i++) {
+                printf("%02X ", buff[i]);
+            }
+            printf("\n");
             break;
         }
     }
