@@ -44,14 +44,17 @@ int main(int argc, char **argv)
 
 	// Init hedev
 	hedev_init();
+
+	printf("* Delaying before first poll...\n");
 	
 	while(1) {
-		hedev_poll_usb_devices();
+		// Sleep BEFORE first poll
 		#if defined(__linux__)
 			sleep(2);
 		#elif defined(_WIN32)
 			Sleep(2000);
 		#endif
+		hedev_poll_usb_devices();
 	}
 
 	cleanup();

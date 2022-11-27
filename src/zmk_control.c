@@ -136,34 +136,3 @@ int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_head
 
     return err;
 }
-
-int zmk_control_read_message (struct HEDev *device, struct zmk_control_msg_header *header, uint8_t *data) {
-    memset(msg_buffer, 0, sizeof(msg_buffer));
-    if(header->size <= ZMK_CONTROL_REPORT_DATA_SIZE) {
-        // No need for chunks - build message
-        header->chunk_offset = 0;
-        header->chunk_size = header->size;
-        memcpy(msg_buffer, header, sizeof(struct zmk_control_msg_header));
-        memcpy(msg_buffer + sizeof(struct zmk_control_msg_header), data, header->size);
-
-        return device_write(device, msg_buffer, ZMK_CONTROL_REPORT_SIZE);
-    }
-
-    int err = 0;
-    // Chunk the message
-    int bytes_left = header->size;
-    while(bytes_left > 0) {
-        header->chunk_offset = header->size - bytes_left;
-        header->chunk_size = bytes_left <= ZMK_CONTROL_REPORT_DATA_SIZE ? bytes_left : ZMK_CONTROL_REPORT_DATA_SIZE;
-        memcpy(msg_buffer, header, sizeof(struct zmk_control_msg_header));
-        memcpy(msg_buffer + sizeof(struct zmk_control_msg_header), data + header->chunk_offset, header->chunk_size);
-        err = device_write(device, msg_buffer, ZMK_CONTROL_REPORT_SIZE);
-        if(err < 0) {
-            break;
-        }
-
-        bytes_left -= header->chunk_size;
-    }
-
-    return err;
-}

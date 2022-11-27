@@ -69,10 +69,28 @@ void hedev_print_products ();
  * @param device 
  * @param buffer 
  * @param len 
- * @return int 
+ * @return Error code (< 0), or bytes written
  */
 int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len);
 
+/**
+ * @brief Reads from a device. Returns bytes read
+ * 
+ * @param device 
+ * @param buffer 
+ * @param len 
+ * @return Error code (< 0), or bytes read
+ */
+int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len);
+
+/**
+ * @brief Finds a device. Any of the parameters may be NULL, for example `find_device(NULL, L"ABCDEFG123456789", NULL)`
+ * 
+ * @param product 
+ * @param serial 
+ * @param path 
+ * @return struct HEDev* 
+ */
 struct HEDev *find_device (struct HEProduct *product, const wchar_t *serial, const char *path);
 
 #endif
