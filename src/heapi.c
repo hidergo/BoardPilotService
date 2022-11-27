@@ -165,6 +165,7 @@ int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json) {
     }
 
     if(zmk_control_msg_set_iqs5xx_registers(device, config, cJSON_IsTrue(save)) == 0) {
+        printf("[heapi_msg_SET_IQS_REGS] Written to %s\n", device->product->product_string);
         cJSON_AddBoolToObject(resp, "status", cJSON_True);
         heapi_send(client, resp);
         cJSON_Delete(resp);
@@ -348,7 +349,7 @@ DWORD WINAPI heapi_server_listener (void *data) {
                     exit(1);
                 }
             #elif defined(_WIN32)
-                apiServer.thread_server_listener = CreateThread(NULL, 0, heapi_client_listener, NULL, 0, NULL);
+                apiServer.thread_server_listener = CreateThread(NULL, 0, heapi_client_listener, cli, 0, NULL);
                 if(apiServer.thread_server_listener == NULL) {
                     printf("[ERROR] failed to create client thread\n");
                     exit(1);
