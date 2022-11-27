@@ -88,16 +88,54 @@ Set IQS5xx (trackpad) registers:
         filterSettings?:            number,
         filterDynBottomBeta?:       number,
         filterDynLowerSpeed?:       number,
-        filterDynUpperSpeed?:       number
+        filterDynUpperSpeed?:       number,
+        initScrollSpeed?:           number
     },
+    reqid: number
+}
+
+```
+Server response:
+```
+
+{
+    cmd:    0x40,
+    status: boolean,
+    reqid:  number
+}
+```
+
+**APICMD_GET_IQS_REGS**
+
+Get IQS5xx (trackpad) registers:
+```
+{
+    cmd:    0x41,
+    device: string,
     reqid: number
 }
 ```
 Server response:
 ```
 {
-    cmd:    0x40,
+    cmd:    0x41,
     status: boolean,
+    regs: {
+        activeRefreshRate?:         number,
+        idleRefreshRate?:           number,
+        singleFingerGestureMask?:   number,
+        multiFingerGestureMask?:    number,
+        tapTime?:                   number,
+        tapDistance?:               number,
+        touchMultiplier?:           number,
+        debounce?:                  number,
+        i2cTimeout?:                number,
+        filterSettings?:            number,
+        filterDynBottomBeta?:       number,
+        filterDynLowerSpeed?:       number,
+        filterDynUpperSpeed?:       number,
+        initScrollSpeed?:           number
+    },
     reqid:  number
 }
 ```

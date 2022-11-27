@@ -160,6 +160,9 @@ int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json) {
             else if(strcmp("filterDynUpperSpeed", current_key) == 0) {
                 config.filterDynUpperSpeed = current_reg->valueint;
             }
+            else if(strcmp("initScrollDistance", current_key) == 0) {
+                config.initScrollDistance = current_reg->valueint;
+            }
                 
         }
     }
@@ -179,7 +182,7 @@ int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json) {
         return 1;
     }
 }
-/*
+
 int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json) {
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
 
@@ -210,13 +213,58 @@ int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json) {
         return 1;
     }
 
-    uint8_t 
+    uint8_t buff[128];
+    memset(buff, 0, sizeof(buff));
+    
+    int rlen = zmk_control_get_config(device, ZMK_CONFIG_CUSTOM_IQS5XX_REGS, buff, sizeof(buff));
 
-    int len = device_read(device, )
+    if(rlen <= 0) {
+        printf("[heapi_msg_GET_IQS_REGS] FAIL: could not read\n");
+        // Fail
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        heapi_send(client, resp);
+        cJSON_Delete(resp);
+        return 1;
+    }
+
+    printf("RECV: %i\n", rlen);
+    for(int i = 0; i < rlen; i++) {
+        printf("%02X ", buff[i]);
+    }
+    printf("\n");
+
+    struct iqs5xx_reg_config *rec_registers;
+
+    struct zmk_control_msg_header *rec_hdr = (struct zmk_control_msg_header *)buff;
+    struct zmk_control_msg_get_config *rec_config = (struct zmk_control_msg_get_config *)(buff + sizeof(struct zmk_control_msg_header));
+
+    rec_registers = (struct iqs5xx_reg_config *)&rec_config->data;
+
+    cJSON_AddBoolToObject(resp, "status", cJSON_True);
+    cJSON *reg_obj = cJSON_AddObjectToObject(resp, "regs");
+
+    cJSON_AddNumberToObject(reg_obj, "activeRefreshRate", rec_registers->activeRefreshRate);
+    cJSON_AddNumberToObject(reg_obj, "idleRefreshRate", rec_registers->idleRefreshRate);
+    cJSON_AddNumberToObject(reg_obj, "singleFingerGestureMask", rec_registers->singleFingerGestureMask);
+    cJSON_AddNumberToObject(reg_obj, "multiFingerGestureMask", rec_registers->multiFingerGestureMask);
+    cJSON_AddNumberToObject(reg_obj, "tapTime", rec_registers->tapTime);
+    cJSON_AddNumberToObject(reg_obj, "tapDistance", rec_registers->tapDistance);
+    cJSON_AddNumberToObject(reg_obj, "touchMultiplier", rec_registers->touchMultiplier);
+    cJSON_AddNumberToObject(reg_obj, "debounce", rec_registers->debounce);
+    cJSON_AddNumberToObject(reg_obj, "i2cTimeout", rec_registers->i2cTimeout);
+    cJSON_AddNumberToObject(reg_obj, "filterSettings", rec_registers->filterSettings);
+    cJSON_AddNumberToObject(reg_obj, "filterDynBottomBeta", rec_registers->filterDynBottomBeta);
+    cJSON_AddNumberToObject(reg_obj, "filterDynLowerSpeed", rec_registers->filterDynLowerSpeed);
+    cJSON_AddNumberToObject(reg_obj, "filterDynUpperSpeed", rec_registers->filterDynUpperSpeed);
+    cJSON_AddNumberToObject(reg_obj, "initScrollDistance", rec_registers->initScrollDistance);
+
+    heapi_send(client, resp);
 
     cJSON_Delete(resp);
+
+    return 0;
 }
-*/
+
 
 int heapi_parse_client_message (struct HEApiClient *client) {
     int err = 0;
@@ -251,6 +299,9 @@ int heapi_parse_client_message (struct HEApiClient *client) {
             break;
         case APICMD_SET_IQS_REGS:
             err = heapi_msg_SET_IQS_REGS(client, json);
+            break;
+        case APICMD_GET_IQS_REGS:
+            err = heapi_msg_GET_IQS_REGS(client, json);
             break;
         default:
             break;

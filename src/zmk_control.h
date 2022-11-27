@@ -139,6 +139,17 @@ int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_head
 int zmk_control_set_config (struct HEDev *device, uint16_t key, void *data, uint16_t len, uint8_t save);
 
 /**
+ * @brief Read device config field
+ * 
+ * @param device 
+ * @param key 
+ * @param data 
+ * @param maxlen
+ * @return int 
+ */
+int zmk_control_get_config (struct HEDev *device, uint16_t key, void *data, uint16_t maxlen);
+
+/**
  * @brief Sets the device time
  * 
  * @param device 

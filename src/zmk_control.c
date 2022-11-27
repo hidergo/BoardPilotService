@@ -104,6 +104,28 @@ int zmk_control_set_config (struct HEDev *device, uint16_t key, void *data, uint
     return 0;
 }
 
+int zmk_control_get_config (struct HEDev *device, uint16_t key, void *data, uint16_t maxlen) {
+    // Output buffer
+    uint8_t buff[32];
+    // Header
+    struct zmk_control_msg_header header;
+    zmk_control_build_header(&header, ZMK_CONTROL_CMD_GET_CONFIG, 1);
+
+    struct zmk_control_msg_get_config *msg = (struct zmk_control_msg_get_config*)(buff);
+    uint8_t *msg_data = (uint8_t*)&msg->data;
+    msg->key = key;
+    msg->size = maxlen;
+    *msg_data = 0;
+
+    // Write a message
+    zmk_control_write_message(device, &header, buff);
+    
+    // Read response
+    int len = device_read(device, data, maxlen);
+
+    return len;
+}
+
 uint8_t msg_buffer[ZMK_CONTROL_REPORT_SIZE];
 
 int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_header *header, uint8_t *data) {
