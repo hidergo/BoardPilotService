@@ -98,7 +98,7 @@ int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json) {
         return 1;
     }
     wchar_t serial_buff[64];
-    swprintf(serial_buff, 64, L"%s", device_object->valuestring);
+    swprintf(serial_buff, 64, L"%hs", device_object->valuestring);
 
     struct HEDev *device = find_device(NULL, serial_buff, NULL);
 
@@ -178,7 +178,44 @@ int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json) {
         return 1;
     }
 }
+/*
+int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json) {
+    cJSON *device_object = cJSON_GetObjectItem(json, "device");
 
+    // RESPONSE
+    cJSON *resp = cJSON_CreateObject();
+    cJSON_AddNumberToObject(resp, "cmd", APICMD_REGISTER);
+    cJSON_AddNumberToObject(resp, "reqid", cJSON_GetObjectItem(json, "reqid")->valueint);
+
+    if(device_object == NULL) {
+        printf("[heapi_msg_GET_IQS_REGS] FAIL: 'device' field missing from request\n");
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        heapi_send(client, resp);
+        cJSON_Delete(resp);
+        return 1;
+    }
+
+    wchar_t serial_buff[64];
+    swprintf(serial_buff, 64, L"%hs", device_object->valuestring);
+
+    struct HEDev *device = find_device(NULL, serial_buff, NULL);
+
+    if(device == NULL) {
+        printf("[heapi_msg_GET_IQS_REGS] FAIL: could not find device %ls\n", serial_buff);
+        // Fail
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        heapi_send(client, resp);
+        cJSON_Delete(resp);
+        return 1;
+    }
+
+    uint8_t 
+
+    int len = device_read(device, )
+
+    cJSON_Delete(resp);
+}
+*/
 
 int heapi_parse_client_message (struct HEApiClient *client) {
     int err = 0;

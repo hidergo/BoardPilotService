@@ -73,30 +73,8 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
         return -1;
     }
     struct hid_device_info *devinfo = hid_get_device_info(dev);
-    memset(report_buffer, 0, sizeof(report_buffer));
-    memcpy(report_buffer, buffer, sizeof(report_buffer) < len ? sizeof(report_buffer) : len);
+    int err = 0;
 
-    // Send request message
-    int err;
-#if defined(_WIN32)
-    if(devinfo->bus_type == HID_API_BUS_BLUETOOTH) {
-        err = hid_set_output_report(dev, report_buffer, sizeof(report_buffer));
-    }
-    else {
-        err = hid_write(dev, report_buffer, sizeof(report_buffer));
-    }
-    
-#elif defined(__linux__)
-    err = hid_write(dev, report_buffer, sizeof(report_buffer));
-#endif
-    if(err < 0) {
-        printf("[ERROR] Failed to write to device: %ls\n", hid_error(dev));
-        hid_close(dev);
-        return err;
-    }
-    else {
-        //printf("[DEBUG] Wrote to %s\n", device->path);
-    }
     // Set blocking mode
     hid_set_nonblocking(dev, 0);
 
@@ -104,10 +82,20 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
     // Receive message, which is written to buffer
 #if defined(_WIN32)
     if(devinfo->bus_type == HID_API_BUS_BLUETOOTH) {
-        err = hid_get_input_report(dev, buffer, len);
+        while((err = hid_get_input_report(dev, buffer + rlen, len)) > 0) {
+            if(buffer[0] == 0x05) {
+                rlen += err;
+                printf("Read %i\n", rlen);
+            }
+        }
     }
     else {
-        err = hid_read(dev, buffer, len);
+        while((err = hid_read_timeout(dev, buffer + rlen, len, 100)) > 0) {
+            if(buffer[0] == 0x05) {
+                rlen += err;
+                printf("Read %i\n", rlen);
+            }
+        }
     }
 #elif defined(__linux__)
     while((err = hid_read_timeout(dev, buffer + rlen, len, 100)) > 0) {
@@ -179,19 +167,22 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             zmk_control_msg_set_iqs5xx_registers(dev, tc, 0);
             */
             uint8_t buff[128];
-            struct zmk_control_msg_header *hdr = (struct zmk_control_msg_header *)buff;
-            hdr->report_id = 0x05;
-            hdr->cmd = ZMK_CONTROL_CMD_GET_CONFIG;
-            hdr->crc = 0;
-            hdr->chunk_offset = 0;
-            hdr->chunk_size = sizeof(struct zmk_control_msg_get_config);
-            hdr->size = hdr->chunk_size;
-            struct zmk_control_msg_get_config *conf = buff + (sizeof(struct zmk_control_msg_header));
+            memset(buff, 0, sizeof(buff));
+            struct zmk_control_msg_header hdr;
+            hdr.report_id = 0x05;
+            hdr.cmd = ZMK_CONTROL_CMD_GET_CONFIG;
+            hdr.crc = 0;
+            hdr.chunk_offset = 0;
+            hdr.chunk_size = sizeof(struct zmk_control_msg_get_config);
+            hdr.size = hdr.chunk_size;
+
+            struct zmk_control_msg_get_config *conf = buff;
             conf->key = ZMK_CONFIG_CUSTOM_IQS5XX_REGS;
             conf->size = 128;
             conf->data = 0;
-
-            int len = device_read(dev, buff, 64);
+            
+            zmk_control_write_message(dev, &hdr, buff);
+            int len = device_read(dev, buff, 128);
 
             printf("RECV: %i\n", len);
             for(int i = 0; i < len; i++) {
