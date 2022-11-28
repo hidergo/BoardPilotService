@@ -10,6 +10,7 @@
 #include <assert.h>
 #include "cJSON/cJSON.h"
 #include "hedef.h"
+#include "heapi_msg.h"
 #include "zmk_control.h"
 
 struct HEApiServer apiServer;
@@ -35,237 +36,6 @@ void heapi_send (struct HEApiClient *client, cJSON *json) {
     cJSON_free(buffer_out);
 }
 
-int heapi_validate_msg (cJSON *json) {
-    return 0;
-}
-
-// Authentication message
-int heapi_msg_AUTH (struct HEApiClient *client, cJSON *json) {
-    int err = 0;
-    err = strcmp((const char *)cJSON_GetObjectItem(json, "key")->valuestring, HEAPI_KEY);
-
-    if(!err)
-        client->authenticated = 1;
-
-    // RESPONSE
-    cJSON *resp = cJSON_CreateObject();
-    cJSON_AddNumberToObject(resp, "cmd", APICMD_REGISTER);
-    cJSON_AddNumberToObject(resp, "reqid", cJSON_GetObjectItem(json, "reqid")->valueint);
-    cJSON_AddBoolToObject(resp, "status", err == 0);
-    heapi_send(client, resp);
-    cJSON_Delete(resp);
-
-    return err;
-}
-
-int heapi_msg_DEVICES (struct HEApiClient *client, cJSON *json) {
-    int err = 0;
-
-    // RESPONSE
-    cJSON *resp = cJSON_CreateObject();
-    cJSON_AddNumberToObject(resp, "cmd", APICMD_REGISTER);
-    cJSON_AddNumberToObject(resp, "reqid", cJSON_GetObjectItem(json, "reqid")->valueint);
-    cJSON *resp_devices = cJSON_AddArrayToObject(resp, "devices");
-
-    for(int i = 0; i < HED_DEVICE_ALLOC_SIZE; i++) {
-        if(device_list[i] != NULL) 
-            cJSON_AddItemToArray(resp_devices, hedev_to_json(device_list[i]));
-    }
-    
-    heapi_send(client, resp);
-    cJSON_Delete(resp);
-
-    return err;
-}
-
-int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json) {
-
-    cJSON *regs = cJSON_GetObjectItem(json, "regs");
-    cJSON *device_object = cJSON_GetObjectItem(json, "device");
-    cJSON *save = cJSON_GetObjectItem(json, "save");
-
-    // RESPONSE
-    cJSON *resp = cJSON_CreateObject();
-    cJSON_AddNumberToObject(resp, "cmd", APICMD_REGISTER);
-    cJSON_AddNumberToObject(resp, "reqid", cJSON_GetObjectItem(json, "reqid")->valueint);
-    
-    if(regs == NULL || device_object == NULL || save == NULL) {
-        // Fail
-        printf("[heapi_msg_SET_IQS_REGS] FAIL: Null regs/device_object/save\n");
-        cJSON_AddBoolToObject(resp, "status", cJSON_False);
-        heapi_send(client, resp);
-        cJSON_Delete(resp);
-        return 1;
-    }
-    wchar_t serial_buff[64];
-    swprintf(serial_buff, 64, L"%hs", device_object->valuestring);
-
-    struct HEDev *device = find_device(NULL, serial_buff, NULL);
-
-    if(device == NULL) {
-        printf("[heapi_msg_SET_IQS_REGS] FAIL: could not find device %ls\n", serial_buff);
-        // Fail
-        cJSON_AddBoolToObject(resp, "status", cJSON_False);
-        heapi_send(client, resp);
-        cJSON_Delete(resp);
-        return 1;
-    }
-
-    cJSON *current_reg = NULL;
-    char *current_key = NULL;
-    
-    struct iqs5xx_reg_config config;
-    memset(&config, 0, sizeof(struct iqs5xx_reg_config));
-    
-    cJSON_ArrayForEach(current_reg, regs) {
-        current_key = current_reg->string;
-        if(current_key != NULL) {
-            
-            if(strcmp("activeRefreshRate", current_key) == 0) {
-                config.activeRefreshRate = current_reg->valueint;
-            }
-            else if(strcmp("idleRefreshRate", current_key) == 0) {
-                config.idleRefreshRate = current_reg->valueint;
-            }
-            else if(strcmp("singleFingerGestureMask", current_key) == 0) {
-                config.singleFingerGestureMask = current_reg->valueint;
-            }
-            else if(strcmp("multiFingerGestureMask", current_key) == 0) {
-                config.multiFingerGestureMask = current_reg->valueint;
-            }
-            else if(strcmp("tapTime", current_key) == 0) {
-                config.tapTime = current_reg->valueint;
-            }
-            else if(strcmp("tapDistance", current_key) == 0) {
-                config.tapDistance = current_reg->valueint;
-            }
-            else if(strcmp("touchMultiplier", current_key) == 0) {
-                config.touchMultiplier = current_reg->valueint;
-            }
-            else if(strcmp("debounce", current_key) == 0) {
-                config.debounce = current_reg->valueint;
-            }
-            else if(strcmp("i2cTimeout", current_key) == 0) {
-                config.i2cTimeout = current_reg->valueint;
-            }
-            else if(strcmp("filterSettings", current_key) == 0) {
-                config.filterSettings = current_reg->valueint;
-            }
-            else if(strcmp("filterDynBottomBeta", current_key) == 0) {
-                config.filterDynBottomBeta = current_reg->valueint;
-            }
-            else if(strcmp("filterDynLowerSpeed", current_key) == 0) {
-                config.filterDynLowerSpeed = current_reg->valueint;
-            }
-            else if(strcmp("filterDynUpperSpeed", current_key) == 0) {
-                config.filterDynUpperSpeed = current_reg->valueint;
-            }
-            else if(strcmp("initScrollDistance", current_key) == 0) {
-                config.initScrollDistance = current_reg->valueint;
-            }
-                
-        }
-    }
-
-    if(zmk_control_msg_set_iqs5xx_registers(device, config, cJSON_IsTrue(save)) == 0) {
-        printf("[heapi_msg_SET_IQS_REGS] Written to %s\n", device->product->product_string);
-        cJSON_AddBoolToObject(resp, "status", cJSON_True);
-        heapi_send(client, resp);
-        cJSON_Delete(resp);
-        return 0;
-    }
-    else {
-        printf("[heapi_msg_SET_IQS_REGS] FAIL: Write\n");
-        cJSON_AddBoolToObject(resp, "status", cJSON_False);
-        heapi_send(client, resp);
-        cJSON_Delete(resp);
-        return 1;
-    }
-}
-
-int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json) {
-    cJSON *device_object = cJSON_GetObjectItem(json, "device");
-
-    // RESPONSE
-    cJSON *resp = cJSON_CreateObject();
-    cJSON_AddNumberToObject(resp, "cmd", APICMD_REGISTER);
-    cJSON_AddNumberToObject(resp, "reqid", cJSON_GetObjectItem(json, "reqid")->valueint);
-
-    if(device_object == NULL) {
-        printf("[heapi_msg_GET_IQS_REGS] FAIL: 'device' field missing from request\n");
-        cJSON_AddBoolToObject(resp, "status", cJSON_False);
-        heapi_send(client, resp);
-        cJSON_Delete(resp);
-        return 1;
-    }
-
-    wchar_t serial_buff[64];
-    swprintf(serial_buff, 64, L"%hs", device_object->valuestring);
-
-    struct HEDev *device = find_device(NULL, serial_buff, NULL);
-
-    if(device == NULL) {
-        printf("[heapi_msg_GET_IQS_REGS] FAIL: could not find device %ls\n", serial_buff);
-        // Fail
-        cJSON_AddBoolToObject(resp, "status", cJSON_False);
-        heapi_send(client, resp);
-        cJSON_Delete(resp);
-        return 1;
-    }
-
-    uint8_t buff[128];
-    memset(buff, 0, sizeof(buff));
-    
-    int rlen = zmk_control_get_config(device, ZMK_CONFIG_CUSTOM_IQS5XX_REGS, buff, sizeof(buff));
-
-    if(rlen <= 0) {
-        printf("[heapi_msg_GET_IQS_REGS] FAIL: could not read\n");
-        // Fail
-        cJSON_AddBoolToObject(resp, "status", cJSON_False);
-        heapi_send(client, resp);
-        cJSON_Delete(resp);
-        return 1;
-    }
-
-    printf("RECV: %i\n", rlen);
-    for(int i = 0; i < rlen; i++) {
-        printf("%02X ", buff[i]);
-    }
-    printf("\n");
-
-    struct iqs5xx_reg_config *rec_registers;
-
-    struct zmk_control_msg_header *rec_hdr = (struct zmk_control_msg_header *)buff;
-    struct zmk_control_msg_get_config *rec_config = (struct zmk_control_msg_get_config *)(buff + sizeof(struct zmk_control_msg_header));
-
-    rec_registers = (struct iqs5xx_reg_config *)&rec_config->data;
-
-    cJSON_AddBoolToObject(resp, "status", cJSON_True);
-    cJSON *reg_obj = cJSON_AddObjectToObject(resp, "regs");
-
-    cJSON_AddNumberToObject(reg_obj, "activeRefreshRate", rec_registers->activeRefreshRate);
-    cJSON_AddNumberToObject(reg_obj, "idleRefreshRate", rec_registers->idleRefreshRate);
-    cJSON_AddNumberToObject(reg_obj, "singleFingerGestureMask", rec_registers->singleFingerGestureMask);
-    cJSON_AddNumberToObject(reg_obj, "multiFingerGestureMask", rec_registers->multiFingerGestureMask);
-    cJSON_AddNumberToObject(reg_obj, "tapTime", rec_registers->tapTime);
-    cJSON_AddNumberToObject(reg_obj, "tapDistance", rec_registers->tapDistance);
-    cJSON_AddNumberToObject(reg_obj, "touchMultiplier", rec_registers->touchMultiplier);
-    cJSON_AddNumberToObject(reg_obj, "debounce", rec_registers->debounce);
-    cJSON_AddNumberToObject(reg_obj, "i2cTimeout", rec_registers->i2cTimeout);
-    cJSON_AddNumberToObject(reg_obj, "filterSettings", rec_registers->filterSettings);
-    cJSON_AddNumberToObject(reg_obj, "filterDynBottomBeta", rec_registers->filterDynBottomBeta);
-    cJSON_AddNumberToObject(reg_obj, "filterDynLowerSpeed", rec_registers->filterDynLowerSpeed);
-    cJSON_AddNumberToObject(reg_obj, "filterDynUpperSpeed", rec_registers->filterDynUpperSpeed);
-    cJSON_AddNumberToObject(reg_obj, "initScrollDistance", rec_registers->initScrollDistance);
-
-    heapi_send(client, resp);
-
-    cJSON_Delete(resp);
-
-    return 0;
-}
-
-
 int heapi_parse_client_message (struct HEApiClient *client) {
     int err = 0;
     cJSON *json = cJSON_Parse((const char *)client->recvBuffer);
@@ -284,30 +54,44 @@ int heapi_parse_client_message (struct HEApiClient *client) {
         return 1;
     }
     // Check for incorrect format
-    err = heapi_validate_msg(json);
+    err = heapi_msg_validate(json);
     if(err) {
         goto clean;
     }
+
+    // Create response object
+    // cmd and reqid is checked in heapi_msg_validate, so they shouldn't be null
+    cJSON *resp = cJSON_CreateObject();
+    // Add cmd
+    cJSON_AddNumberToObject(resp, "cmd", cmd->valueint);
+    // Add reqid
+    cJSON_AddNumberToObject(resp, "reqid", cJSON_GetObjectItem(json, "reqid")->valueint);
+
     switch (cmd->valueint)
     {
         case APICMD_REGISTER:
-            err = heapi_msg_AUTH(client, json);
-            printf("Client registered: %i\n", err);
+            err = heapi_msg_AUTH(client, json, resp);
+            printf("Client register status: %i\n", err);
             break;
         case APICMD_DEVICES:
-            err = heapi_msg_DEVICES(client, json);
+            err = heapi_msg_DEVICES(client, json, resp);
             break;
         case APICMD_SET_IQS_REGS:
-            err = heapi_msg_SET_IQS_REGS(client, json);
+            err = heapi_msg_SET_IQS_REGS(client, json, resp);
             break;
         case APICMD_GET_IQS_REGS:
-            err = heapi_msg_GET_IQS_REGS(client, json);
+            err = heapi_msg_GET_IQS_REGS(client, json, resp);
             break;
         default:
             break;
     }
 
+    // Send response
+    heapi_send(client, resp);
+    
     clean:
+
+    cJSON_Delete(resp);
 
     cJSON_Delete(json);
     return err;
@@ -386,6 +170,7 @@ DWORD WINAPI heapi_server_listener (void *data) {
             assert(cli != NULL);
 
             socklen_t cli_addr_size = sizeof(struct sockaddr_in);
+            printf("Waiting for next connection\n");
             cli->sockfd = accept(apiServer.sockfd, (struct sockaddr *)&cli->addrInfo, &cli_addr_size);
             if((int)cli->sockfd < 0) {
                 printf("[ERROR] error accepting a socket\n");
@@ -394,6 +179,7 @@ DWORD WINAPI heapi_server_listener (void *data) {
             }
             printf("Client connected, starting thread..\n");
             cli->connected = 1;
+            apiServer.clientCount++;
             #if defined(__linux__)
                 if(pthread_create(&cli->thread_client_listener, NULL, heapi_client_listener, cli)) {
                     printf("[ERROR] failed to create client thread\n");
@@ -413,6 +199,7 @@ DWORD WINAPI heapi_server_listener (void *data) {
         #elif defined(_WIN32)
             Sleep(5000);
         #endif
+        printf("Recreate server\n");
         heapi_create_server(0);
     }
 }
