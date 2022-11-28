@@ -2,6 +2,7 @@ add_executable(hidergodm hidergod.c)
 target_sources(hidergodm PRIVATE hedev.c)
 target_sources(hidergodm PRIVATE heapi.c)
 target_sources(hidergodm PRIVATE zmk_control.c)
+target_sources(hidergodm PRIVATE heapi_msg.c)
 
 
 # NOTE: no `find_package` is required, since HIDAPI targets are already a part of the project tree
