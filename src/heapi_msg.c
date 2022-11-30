@@ -185,8 +185,7 @@ int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp
 
     struct iqs5xx_reg_config *rec_registers;
 
-    struct zmk_control_msg_header *rec_hdr = (struct zmk_control_msg_header *)buff;
-    struct zmk_control_msg_get_config *rec_config = (struct zmk_control_msg_get_config *)(buff + sizeof(struct zmk_control_msg_header));
+    struct zmk_control_msg_get_config *rec_config = (struct zmk_control_msg_get_config *)(buff);
 
     rec_registers = (struct iqs5xx_reg_config *)&rec_config->data;
 
@@ -207,6 +206,121 @@ int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp
     cJSON_AddNumberToObject(reg_obj, "filterDynLowerSpeed", rec_registers->filterDynLowerSpeed);
     cJSON_AddNumberToObject(reg_obj, "filterDynUpperSpeed", rec_registers->filterDynUpperSpeed);
     cJSON_AddNumberToObject(reg_obj, "initScrollDistance", rec_registers->initScrollDistance);
+
+    return 0;
+}
+
+int heapi_msg_SET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) {
+
+    cJSON *device_object = cJSON_GetObjectItem(json, "device");
+    cJSON *save = cJSON_GetObjectItem(json, "save");
+
+    // RESPONSE
+    if(device_object == NULL || save == NULL) {
+        // Fail
+        printf("[heapi_msg_SET_KEYMAP] FAIL: 'device' field missing from request\n");
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+    // Find device
+    wchar_t serial_buff[64];
+    swprintf(serial_buff, 64, L"%hs", device_object->valuestring);
+    struct HEDev *device = find_device(NULL, serial_buff, NULL);
+
+    // Check device
+    if(device == NULL) {
+        // Fail
+        printf("[heapi_msg_SET_KEYMAP] FAIL: could not find device %ls\n", serial_buff);
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+    // Keymap size is 3 layers * 70 keys * 5 bytes = 1050 bytes. TODO: allocate dynamically
+    struct zmk_config_keymap_item buff[3 * 70];
+    memset(buff, 0, sizeof(buff));
+
+    cJSON *keymap = cJSON_GetObjectItem(json, "keymap");
+    cJSON *current_layer = NULL;
+    cJSON *current_key = NULL;
+    int index = 0;
+    // Loop through layers
+    cJSON_ArrayForEach(current_layer, keymap) {
+        // Loop through keys
+        cJSON_ArrayForEach(current_key, current_layer) {
+            buff[index].device = cJSON_GetArrayItem(current_key, 0)->valueint;
+            buff[index].param = cJSON_GetArrayItem(current_key, 1)->valueint;
+            index++;
+        }
+    }
+
+    int err = zmk_control_set_config(device, ZMK_CONFIG_KEY_KEYMAP, buff, sizeof(buff), cJSON_IsTrue(save));
+
+    if(err < 0) {
+        // Fail
+        printf("[heapi_msg_SET_KEYMAP] FAIL: could not write\n");
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+
+    cJSON_AddBoolToObject(resp, "status", cJSON_True);
+    return 0;
+}
+
+int heapi_msg_GET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) {
+
+    cJSON *device_object = cJSON_GetObjectItem(json, "device");
+
+    // RESPONSE
+    if(device_object == NULL) {
+        // Fail
+        printf("[heapi_msg_GET_KEYMAP] FAIL: 'device' field missing from request\n");
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+    // Find device
+    wchar_t serial_buff[64];
+    swprintf(serial_buff, 64, L"%hs", device_object->valuestring);
+    struct HEDev *device = find_device(NULL, serial_buff, NULL);
+
+    // Check device
+    if(device == NULL) {
+        // Fail
+        printf("[heapi_msg_GET_KEYMAP] FAIL: could not find device %ls\n", serial_buff);
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+    // Keymap size is 3 layers * 70 keys * 5 bytes = 1050 bytes. TODO: allocate dynamically
+    uint8_t buff[1200];
+    memset(buff, 0, sizeof(buff));
+    
+    int rlen = zmk_control_get_config(device, ZMK_CONFIG_KEY_KEYMAP, buff, sizeof(buff));
+
+    if(rlen <= 0) {
+        // Fail
+        printf("[heapi_msg_GET_KEYMAP] FAIL: could not read\n");
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+
+    struct zmk_config_keymap_item *rec_keys;
+
+    struct zmk_control_msg_get_config *rec_config = (struct zmk_control_msg_get_config *)(buff);
+
+    rec_keys = (struct zmk_config_keymap_item *)&rec_config->data;
+
+    cJSON_AddBoolToObject(resp, "status", cJSON_True);
+    cJSON *layers = cJSON_AddArrayToObject(resp, "keymap");
+    // Three layers, 70 keys... TODO:
+    for(int l = 0; l < 3; l++) {
+        cJSON *keys = cJSON_CreateArray();
+        for(int k = 0; k < 70; k++) {
+            cJSON *key = cJSON_CreateArray();
+            // Collection
+            cJSON_AddItemToArray(key, cJSON_CreateNumber(rec_keys[l * 70 + k].device));
+            cJSON_AddItemToArray(key, cJSON_CreateNumber(rec_keys[l * 70 + k].param));
+            cJSON_AddItemToArray(keys, key);
+        }
+        cJSON_AddItemToArray(layers, keys);
+    }
 
     return 0;
 }

@@ -140,6 +140,69 @@ Server response:
 }
 ```
 
+**APICMD_SET_KEYMAP**
+
+Set keymap registers:
+```
+{
+    cmd:    0x20,
+    device: string,
+    save: boolean,
+    keymap: number[][][],
+    reqid: number
+}
+```
+`keymap` field is a 3 dimensional array in following format Layers -> \[Keys -> \[Single key -> \[device, param\]\]\].
+
+example: 
+```
+keymap: [
+    // Layer 0
+    [
+        [6, 0x70005], // would be letter B
+        [6, 0x70004], // would be letter A
+    ],
+    // Layer 1
+    [
+        [6, 0x70006], // would be letter C
+        [6, 0x70005], // would be letter B
+    ]
+]
+```
+
+Server response:
+```
+{
+    cmd:    0x20,
+    status: boolean,
+    reqid:  number
+}
+```
+
+**APICMD_GET_KEYMAP**
+
+Get keymap registers:
+```
+{
+    cmd:    0x21,
+    device: string,
+    reqid: number
+}
+```
+
+Server response:
+```
+{
+    cmd:    0x21,
+    status: boolean,
+    keymap: [][][]
+    reqid:  number
+}
+```
+
+See keymap format from *APICMD_SET_KEYMAP*
+
+
 ---
 
 List of messages which API may send to client (not requested):

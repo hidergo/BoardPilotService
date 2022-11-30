@@ -78,6 +78,9 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
     // Set blocking mode
     hid_set_nonblocking(dev, 0);
 
+    // Temp buffer
+    uint8_t temp_buffer[ZMK_CONTROL_REPORT_SIZE];
+
     int rlen = 0;
     // Receive message, which is written to buffer
 #if defined(_WIN32)
@@ -98,10 +101,15 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
         }
     }
 #elif defined(__linux__)
-    while((err = hid_read_timeout(dev, buffer + rlen, len, 100)) > 0) {
-        if(buffer[0] == 0x05) {
+
+    while((err = hid_read_timeout(dev, temp_buffer, ZMK_CONTROL_REPORT_SIZE, 100)) > 0) {
+        if(temp_buffer[0] == 0x05) {
+            // Header received
+            struct zmk_control_msg_header *hdr = (struct zmk_control_msg_header*)temp_buffer;
+
+            memcpy(&buffer[hdr->chunk_offset], temp_buffer + sizeof(struct zmk_control_msg_header), hdr->chunk_size);
+        
             rlen += err;
-            printf("Read %i\n", rlen);
         }
     }
 #endif

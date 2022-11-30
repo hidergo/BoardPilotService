@@ -42,4 +42,10 @@ PACK(struct iqs5xx_reg_config {
     uint16_t    initScrollDistance;
 });
 
+
+PACK(struct zmk_config_keymap_item {
+    uint8_t device;
+    uint32_t param;
+});
+
 #endif

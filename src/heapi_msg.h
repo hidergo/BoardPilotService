@@ -52,6 +52,24 @@ int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp
  */
 int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp);
 
+/**
+ * @brief Parse set keymap message
+ * 
+ * @param client 
+ * @param json 
+ * @param resp 
+ * @return int 
+ */
+int heapi_msg_SET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp);
 
+/**
+ * @brief Parse get keymap message
+ * 
+ * @param client 
+ * @param json 
+ * @param resp 
+ * @return int 
+ */
+int heapi_msg_GET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp);
 
 #endif
