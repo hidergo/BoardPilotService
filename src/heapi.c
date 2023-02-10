@@ -88,6 +88,12 @@ int heapi_parse_client_message (struct HEApiClient *client) {
         case APICMD_GET_KEYMAP:
             err = heapi_msg_GET_KEYMAP(client, json, resp);
             break;
+        case APICMD_SET_MOUSE_SENS:
+            err = heapi_msg_SET_MOUSE_SENSITIVITY(client, json, resp);
+            break;
+        case APICMD_GET_MOUSE_SENS:
+            err = heapi_msg_GET_MOUSE_SENSITIVITY(client, json, resp);
+            break;
         default:
             break;
     }

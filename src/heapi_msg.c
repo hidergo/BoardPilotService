@@ -324,3 +324,86 @@ int heapi_msg_GET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) 
 
     return 0;
 }
+
+int heapi_msg_SET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJSON *resp) {
+
+    cJSON *device_object = cJSON_GetObjectItem(json, "device");
+    cJSON *save = cJSON_GetObjectItem(json, "save");
+
+    // RESPONSE
+    if(device_object == NULL || save == NULL) {
+        // Fail
+        printf("[heapi_msg_SET_MOUSE_SENSITIVITY] FAIL: 'device' field missing from request\n");
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+    // Find device
+    wchar_t serial_buff[64];
+    swprintf(serial_buff, 64, L"%hs", device_object->valuestring);
+    struct HEDev *device = find_device(NULL, serial_buff, NULL);
+
+    // Check device
+    if(device == NULL) {
+        // Fail
+        printf("[heapi_msg_SET_MOUSE_SENSITIVITY] FAIL: could not find device %ls\n", serial_buff);
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+
+    cJSON *sensitivity = cJSON_GetObjectItem(json, "sensitivity");
+
+    uint8_t sens = sensitivity->valueint;
+
+    int err = zmk_control_set_config(device, ZMK_CONFIG_KEY_MOUSE_SENSITIVITY, &sens, sizeof(sens), cJSON_IsTrue(save));
+
+    if(err < 0) {
+        // Fail
+        printf("[heapi_msg_SET_MOUSE_SENSITIVITY] FAIL: could not write\n");
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+
+    cJSON_AddBoolToObject(resp, "status", cJSON_True);
+    return 0;
+}
+
+int heapi_msg_GET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJSON *resp) {
+
+    cJSON *device_object = cJSON_GetObjectItem(json, "device");
+
+    // RESPONSE
+    if(device_object == NULL) {
+        // Fail
+        printf("[heapi_msg_GET_MOUSE_SENSITIVITY] FAIL: 'device' field missing from request\n");
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+    // Find device
+    wchar_t serial_buff[64];
+    swprintf(serial_buff, 64, L"%hs", device_object->valuestring);
+    struct HEDev *device = find_device(NULL, serial_buff, NULL);
+
+    // Check device
+    if(device == NULL) {
+        // Fail
+        printf("[heapi_msg_GET_MOUSE_SENSITIVITY] FAIL: could not find device %ls\n", serial_buff);
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+
+    uint8_t sens = 128;
+    
+    int rlen = zmk_control_get_config(device, ZMK_CONFIG_KEY_MOUSE_SENSITIVITY, &sens, sizeof(sens));
+
+    if(rlen <= 0) {
+        // Fail
+        printf("[heapi_msg_GET_MOUSE_SENSITIVITY] FAIL: could not read\n");
+        cJSON_AddBoolToObject(resp, "status", cJSON_False);
+        return 1;
+    }
+
+    cJSON_AddBoolToObject(resp, "status", cJSON_True);
+    cJSON_AddItemToArray(resp, cJSON_CreateNumber(sens));
+
+    return 0;
+}

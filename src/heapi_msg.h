@@ -72,4 +72,24 @@ int heapi_msg_SET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp);
  */
 int heapi_msg_GET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp);
 
+/**
+ * @brief Parse set mouse sensitivity message
+ * 
+ * @param client 
+ * @param json 
+ * @param resp 
+ * @return int 
+*/
+int heapi_msg_SET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJSON *resp);
+
+/**
+ * @brief Parse get mouse sensitivity message
+ * 
+ * @param client 
+ * @param json 
+ * @param resp 
+ * @return int 
+*/
+int heapi_msg_GET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJSON *resp);
+
 #endif
