@@ -12,6 +12,43 @@
 
 uint8_t report_buffer[ZMK_CONTROL_REPORT_SIZE];
 
+size_t hex_to_bytes (const char *hex_string, uint8_t *bytes) {
+    size_t hex_len = strlen(hex_string);
+    if(hex_len % 2 != 0) {
+        printf("[WARN]: Invalid hex string format\n");
+        return 0;
+    }
+
+    bytes = malloc(hex_len / 2);
+    if(bytes == NULL) {
+        printf("[ERROR]: Out of memory\n");
+        return 0;   
+    }
+
+    for(int i = 0; i < hex_len; i += 2) {
+        char hx[3] = { hex_string[i], hex_string[i + 1], 0 };
+        bytes[i] = (uint8_t)strtoul(hx, NULL, 16);
+    }
+
+    return hex_len / 2;
+}
+
+char *bytes_to_hex (uint8_t *bytes, size_t len) {
+    char *hex = malloc(len * 2 + 1);
+    if(hex == NULL) {
+        printf("[ERROR]: Out of memory\n");
+        return NULL;
+    }
+    hex[len * 2] = 0;
+
+    for(int i = 0; i < len; i++) {
+        snprintf(&hex[i * 2], 2, "%02X", bytes[i]);
+    }
+
+    return hex;
+}
+
+
 int zmk_control_build_header (struct zmk_control_msg_header *header, enum zmk_control_cmd_t cmd, uint16_t size) {
     header->report_id = 0x05;
     header->cmd = cmd;

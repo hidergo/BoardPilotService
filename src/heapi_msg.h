@@ -92,4 +92,25 @@ int heapi_msg_SET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJ
 */
 int heapi_msg_GET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJSON *resp);
 
+
+/**
+ * @brief Parse write field to the device message
+ * 
+ * @param client
+ * @param json
+ * @param resp
+ * @return int
+*/
+int heapi_msg_ZMK_CONTROL_WRITE (struct HEApiClient *client, cJSON *json, cJSON *resp);
+
+/**
+ * @brief Parse read field from the device message
+ * 
+ * @param client
+ * @param json
+ * @param resp
+ * @return int
+*/
+int heapi_msg_ZMK_CONTROL_READ (struct HEApiClient *client, cJSON *json, cJSON *resp);
+
 #endif

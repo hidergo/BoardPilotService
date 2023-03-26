@@ -94,6 +94,12 @@ int heapi_parse_client_message (struct HEApiClient *client) {
         case APICMD_GET_MOUSE_SENS:
             err = heapi_msg_GET_MOUSE_SENSITIVITY(client, json, resp);
             break;
+        case APICMD_ZMK_CONTROL_WRITE:
+            err = heapi_msg_ZMK_CONTROL_WRITE(client, json, resp);
+            break;
+        case APICMD_ZMK_CONTROL_READ:
+            err = heapi_msg_ZMK_CONTROL_READ(client, json, resp);
+            break;
         default:
             break;
     }

@@ -12,6 +12,8 @@
 
 #include "hedef.h"
 
+#define ZMK_CONTROL_MAX_MESSAGE_LENGTH      0x1000
+
 // Maximum report size including 1 byte of report ID
 #define ZMK_CONTROL_REPORT_SIZE     0x20
 
@@ -122,6 +124,9 @@ enum zmk_config_key {
     ZMK_CONFIG_CUSTOM_IQS5XX_REGS =         0x8001,
 
 };
+
+size_t hex_to_bytes (const char *hex_string, uint8_t *bytes);
+char *bytes_to_hex (uint8_t *bytes, size_t len);
 
 int zmk_control_build_header (struct zmk_control_msg_header *header, enum zmk_control_cmd_t cmd, uint16_t size);
 int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_header *header, uint8_t *data);
