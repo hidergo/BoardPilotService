@@ -125,7 +125,7 @@ enum zmk_config_key {
 
 };
 
-size_t hex_to_bytes (const char *hex_string, uint8_t *bytes);
+size_t hex_to_bytes (const char *hex_string, uint8_t **bytes);
 char *bytes_to_hex (uint8_t *bytes, size_t len);
 
 int zmk_control_build_header (struct zmk_control_msg_header *header, enum zmk_control_cmd_t cmd, uint16_t size);

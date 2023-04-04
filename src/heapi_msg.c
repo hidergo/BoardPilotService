@@ -436,7 +436,7 @@ int heapi_msg_ZMK_CONTROL_WRITE (struct HEApiClient *client, cJSON *json, cJSON 
     }
 
     uint8_t *bytes = NULL;
-    size_t bytes_len = hex_to_bytes(hex->string, bytes);
+    size_t bytes_len = hex_to_bytes(hex->valuestring, &bytes);
     if(bytes_len <= 0) {
         // Fail
         printf("[heapi_msg_ZMK_CONTROL_WRITE] FAIL: parse bytes\n");
