@@ -42,7 +42,7 @@ char *bytes_to_hex (uint8_t *bytes, size_t len) {
     hex[len * 2] = 0;
 
     for(int i = 0; i < len; i++) {
-        snprintf(&hex[i * 2], 2, "%02X", bytes[i]);
+        snprintf(&hex[i * 2], 3, "%02X", bytes[i]);
     }
 
     return hex;
