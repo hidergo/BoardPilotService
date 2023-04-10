@@ -136,7 +136,7 @@ DWORD WINAPI heapi_client_listener (void *data) {
         int err = heapi_parse_client_message(client);
         if(err != 0) {
             printf("[WARNING] Message parse error 0x%X\n", err);
-            break;
+            //break;
         }
     }
 #if defined(__linux__)
