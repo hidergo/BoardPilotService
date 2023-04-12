@@ -39,6 +39,11 @@ void heapi_send (struct HEApiClient *client, cJSON *json) {
 int heapi_parse_client_message (struct HEApiClient *client) {
     int err = 0;
     cJSON *json = cJSON_Parse((const char *)client->recvBuffer);
+
+    // Create response object
+    // cmd and reqid is checked in heapi_msg_validate, so they shouldn't be null
+    cJSON *resp = cJSON_CreateObject();
+
     if(json == NULL) {
         err = 1;
         goto clean;
@@ -59,12 +64,9 @@ int heapi_parse_client_message (struct HEApiClient *client) {
         goto clean;
     }
 
-    // Create response object
-    // cmd and reqid is checked in heapi_msg_validate, so they shouldn't be null
-    cJSON *resp = cJSON_CreateObject();
-    // Add cmd
+    // Add cmd to response
     cJSON_AddNumberToObject(resp, "cmd", cmd->valueint);
-    // Add reqid
+    // Add reqid response
     cJSON_AddNumberToObject(resp, "reqid", cJSON_GetObjectItem(json, "reqid")->valueint);
 
     switch (cmd->valueint)
@@ -149,7 +151,7 @@ DWORD WINAPI heapi_client_listener (void *data) {
     printf("Client disconnected\n");
     // CLIENT DISCONNECT
     memset(client, 0, sizeof(struct HEApiClient));
-    client->sockfd = -1;
+    client->sockfd = (SOCKET)-1;
     apiServer.clientCount--;
     // Exit thread
 #if defined(__linux__)
@@ -163,6 +165,7 @@ DWORD WINAPI heapi_client_listener (void *data) {
 void *heapi_server_listener (void *data) {
 #elif defined(_WIN32)
 DWORD WINAPI heapi_server_listener (void *data) {
+    UNREFERENCED_PARAMETER(data);
 #endif
     while(1) {
         while(apiServer.status == APISERVER_STATE_CONNECTED) {
@@ -192,7 +195,7 @@ DWORD WINAPI heapi_server_listener (void *data) {
             cli->sockfd = accept(apiServer.sockfd, (struct sockaddr *)&cli->addrInfo, &cli_addr_size);
             if((int)cli->sockfd < 0) {
                 printf("[ERROR] error accepting a socket\n");
-                cli->sockfd = -1;
+                cli->sockfd = (SOCKET)-1;
                 continue;
             }
             printf("Client connected, starting thread..\n");
@@ -235,12 +238,12 @@ int heapi_create_server (uint8_t create_thread) {
 #endif
 
     int err = 0;
-    apiServer.sockfd = -1;
+    apiServer.sockfd = (SOCKET)-1;
     apiServer.port = 24429;
     apiServer.status = APISERVER_STATE_NOT_CONNECTED;
     memset(apiServer.clients, 0, sizeof(struct HEApiClient) * MAX_API_CLIENT_COUNT);
     for(int i = 0; i < MAX_API_CLIENT_COUNT; i++) {
-        apiServer.clients[i].sockfd = -1;
+        apiServer.clients[i].sockfd = (SOCKET)-1;
     }
     apiServer.clientCount = 0;
     // TODO: IPPROTO_TCP?

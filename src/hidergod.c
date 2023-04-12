@@ -17,13 +17,19 @@ void cleanup ();
 
 
 void exit_handler(int n) {
+#ifdef WIN32
+	UNREFERENCED_PARAMETER(n);
+#endif
 	cleanup();
 
 	exit(0);
 }
 
-int main(int argc, char **argv)
-{   
+int main(int argc, char **argv) {
+#ifdef WIN32
+	UNREFERENCED_PARAMETER(argc);
+	UNREFERENCED_PARAMETER(argv);
+#endif   
 	signal(SIGINT, exit_handler);
     int err;
     printf("Starting hid:ergo daemon\n");

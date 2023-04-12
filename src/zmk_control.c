@@ -56,7 +56,7 @@ int zmk_control_build_header (struct zmk_control_msg_header *header, enum zmk_co
     header->crc = 0;
     // Short messages are padded to ZMK_CONTROL_REPORT_DATA_SIZE
     header->size = size < ZMK_CONTROL_REPORT_DATA_SIZE ? ZMK_CONTROL_REPORT_DATA_SIZE : size;
-    header->chunk_size = header->size <= ZMK_CONTROL_REPORT_DATA_SIZE ? header->size : ZMK_CONTROL_REPORT_DATA_SIZE;
+    header->chunk_size = header->size <= ZMK_CONTROL_REPORT_DATA_SIZE ? (uint8_t)header->size : (uint8_t)ZMK_CONTROL_REPORT_DATA_SIZE;
     return 0;
 }
 
@@ -68,13 +68,15 @@ int zmk_control_build_header (struct zmk_control_msg_header *header, enum zmk_co
  */
 int _zmk_control_get_gmt_offset () {
     time_t gmt, rawtime = time(NULL);
-    struct tm *ptm;
+    struct tm *ptm = NULL;
 
-#if !defined(_WIN32)
     struct tm gbuf;
+#if !defined(_WIN32)
     ptm = gmtime_r(&rawtime, &gbuf);
 #else
-    ptm = gmtime(&rawtime);
+    errno_t err = gmtime_s(&gbuf, &rawtime);
+    if(!err)
+        ptm = &gbuf;
 #endif
     // Request that mktime() looksup dst in timezone database
     ptm->tm_isdst = -1;
@@ -89,14 +91,22 @@ int zmk_control_msg_set_time (struct HEDev *device) {
 
     time(&rawtime);
 
-    struct tm *_time = localtime(&rawtime);
+    struct tm *_time = NULL;
+    struct tm _tm;
+    #if !defined(_WIN32)
+        _time = localtime_r(&rawtime, &_tm);
+    #else
+        errno_t err = localtime_s(&_tm, &rawtime);
+        if(!err)
+            _time = &_tm;
+    #endif
 
     PACK(struct {
         int32_t timestamp;
         int32_t offset;
     }) _time_msg;
 
-    _time_msg.timestamp = rawtime;
+    _time_msg.timestamp = (int32_t)rawtime;
     #ifndef ZMK_CONTROL_USE_CUSTOM_GMT_OFFSET
     _time_msg.offset = (int32_t)_time->tm_gmtoff;
     #else
@@ -163,7 +173,7 @@ int zmk_control_get_config (struct HEDev *device, uint16_t key, void *data, uint
     struct zmk_control_msg_get_config *resp = (struct zmk_control_msg_get_config*)data;
     if(resp->key == key) {
         // Offset data by -4, since the first 4 bytes are from struct zmk_control_msg_get_config
-        memmove(data, data + 4, len - 4);
+        memmove(data, (uint8_t*)data + 4, len - 4);
         return len - 4;
     }
 
@@ -177,7 +187,7 @@ int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_head
     if(header->size <= ZMK_CONTROL_REPORT_DATA_SIZE) {
         // No need for chunks - build message
         header->chunk_offset = 0;
-        header->chunk_size = header->size;
+        header->chunk_size = (uint8_t)header->size;
         memcpy(msg_buffer, header, sizeof(struct zmk_control_msg_header));
         memcpy(msg_buffer + sizeof(struct zmk_control_msg_header), data, header->size);
 
@@ -188,8 +198,8 @@ int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_head
     // Chunk the message
     int bytes_left = header->size;
     while(bytes_left > 0) {
-        header->chunk_offset = header->size - bytes_left;
-        header->chunk_size = bytes_left <= ZMK_CONTROL_REPORT_DATA_SIZE ? bytes_left : ZMK_CONTROL_REPORT_DATA_SIZE;
+        header->chunk_offset = header->size - (uint16_t)bytes_left;
+        header->chunk_size = bytes_left <= ZMK_CONTROL_REPORT_DATA_SIZE ? (uint8_t)bytes_left : (uint8_t)ZMK_CONTROL_REPORT_DATA_SIZE;
         memcpy(msg_buffer, header, sizeof(struct zmk_control_msg_header));
         memcpy(msg_buffer + sizeof(struct zmk_control_msg_header), data + header->chunk_offset, header->chunk_size);
         err = device_write(device, msg_buffer, ZMK_CONTROL_REPORT_SIZE);

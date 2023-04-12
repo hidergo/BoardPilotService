@@ -40,6 +40,11 @@ int heapi_msg_AUTH (struct HEApiClient *client, cJSON *json, cJSON *resp) {
 }
 
 int heapi_msg_DEVICES (struct HEApiClient *client, cJSON *json, cJSON *resp) {
+#ifdef WIN32
+    UNREFERENCED_PARAMETER(client);
+    UNREFERENCED_PARAMETER(json);
+#endif
+
     int err = 0;
 
     // RESPONSE
@@ -54,6 +59,9 @@ int heapi_msg_DEVICES (struct HEApiClient *client, cJSON *json, cJSON *resp) {
 }
 
 int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp) {
+#ifdef WIN32
+    UNREFERENCED_PARAMETER(client);
+#endif
 
     cJSON *regs = cJSON_GetObjectItem(json, "regs");
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
@@ -91,52 +99,52 @@ int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp
         if(current_key != NULL) {
             
             if(strcmp("activeRefreshRate", current_key) == 0) {
-                config.activeRefreshRate = current_reg->valueint;
+                config.activeRefreshRate = (uint16_t)current_reg->valueint;
             }
             else if(strcmp("idleRefreshRate", current_key) == 0) {
-                config.idleRefreshRate = current_reg->valueint;
+                config.idleRefreshRate = (uint16_t)current_reg->valueint;
             }
             else if(strcmp("singleFingerGestureMask", current_key) == 0) {
-                config.singleFingerGestureMask = current_reg->valueint;
+                config.singleFingerGestureMask = (uint8_t)current_reg->valueint;
             }
             else if(strcmp("multiFingerGestureMask", current_key) == 0) {
-                config.multiFingerGestureMask = current_reg->valueint;
+                config.multiFingerGestureMask = (uint8_t)current_reg->valueint;
             }
             else if(strcmp("tapTime", current_key) == 0) {
-                config.tapTime = current_reg->valueint;
+                config.tapTime = (uint16_t)current_reg->valueint;
             }
             else if(strcmp("tapDistance", current_key) == 0) {
-                config.tapDistance = current_reg->valueint;
+                config.tapDistance = (uint16_t)current_reg->valueint;
             }
             else if(strcmp("touchMultiplier", current_key) == 0) {
-                config.touchMultiplier = current_reg->valueint;
+                config.touchMultiplier = (uint8_t)current_reg->valueint;
             }
             else if(strcmp("debounce", current_key) == 0) {
-                config.debounce = current_reg->valueint;
+                config.debounce = (uint8_t)current_reg->valueint;
             }
             else if(strcmp("i2cTimeout", current_key) == 0) {
-                config.i2cTimeout = current_reg->valueint;
+                config.i2cTimeout = (uint8_t)current_reg->valueint;
             }
             else if(strcmp("filterSettings", current_key) == 0) {
-                config.filterSettings = current_reg->valueint;
+                config.filterSettings = (uint8_t)current_reg->valueint;
             }
             else if(strcmp("filterDynBottomBeta", current_key) == 0) {
-                config.filterDynBottomBeta = current_reg->valueint;
+                config.filterDynBottomBeta = (uint8_t)current_reg->valueint;
             }
             else if(strcmp("filterDynLowerSpeed", current_key) == 0) {
-                config.filterDynLowerSpeed = current_reg->valueint;
+                config.filterDynLowerSpeed = (uint8_t)current_reg->valueint;
             }
             else if(strcmp("filterDynUpperSpeed", current_key) == 0) {
-                config.filterDynUpperSpeed = current_reg->valueint;
+                config.filterDynUpperSpeed = (uint8_t)current_reg->valueint;
             }
             else if(strcmp("initScrollDistance", current_key) == 0) {
-                config.initScrollDistance = current_reg->valueint;
+                config.initScrollDistance = (uint8_t)current_reg->valueint;
             }
                 
         }
     }
 
-    if(zmk_control_msg_set_iqs5xx_registers(device, config, cJSON_IsTrue(save)) == 0) {
+    if(zmk_control_msg_set_iqs5xx_registers(device, config, (uint8_t)cJSON_IsTrue(save)) == 0) {
         printf("[heapi_msg_SET_IQS_REGS] Written to %s\n", device->product->product_string);
         cJSON_AddBoolToObject(resp, "status", cJSON_True);
         return 0;
@@ -149,6 +157,9 @@ int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp
 }
 
 int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp) {
+#ifdef WIN32
+    UNREFERENCED_PARAMETER(client);
+#endif
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
 
     // RESPONSE
@@ -211,7 +222,9 @@ int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp
 }
 
 int heapi_msg_SET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-
+#ifdef WIN32
+    UNREFERENCED_PARAMETER(client);
+#endif
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
     cJSON *save = cJSON_GetObjectItem(json, "save");
 
@@ -246,13 +259,13 @@ int heapi_msg_SET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) 
     cJSON_ArrayForEach(current_layer, keymap) {
         // Loop through keys
         cJSON_ArrayForEach(current_key, current_layer) {
-            buff[index].device = cJSON_GetArrayItem(current_key, 0)->valueint;
+            buff[index].device = (uint8_t)cJSON_GetArrayItem(current_key, 0)->valueint;
             buff[index].param = cJSON_GetArrayItem(current_key, 1)->valueint;
             index++;
         }
     }
 
-    int err = zmk_control_set_config(device, ZMK_CONFIG_KEY_KEYMAP, buff, sizeof(buff), cJSON_IsTrue(save));
+    int err = zmk_control_set_config(device, ZMK_CONFIG_KEY_KEYMAP, buff, sizeof(buff), (uint8_t)cJSON_IsTrue(save));
 
     if(err < 0) {
         // Fail
@@ -266,7 +279,9 @@ int heapi_msg_SET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) 
 }
 
 int heapi_msg_GET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-
+#ifdef WIN32
+    UNREFERENCED_PARAMETER(client);
+#endif
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
 
     // RESPONSE
@@ -326,7 +341,9 @@ int heapi_msg_GET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) 
 }
 
 int heapi_msg_SET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-
+#ifdef WIN32
+    UNREFERENCED_PARAMETER(client);
+#endif
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
     cJSON *save = cJSON_GetObjectItem(json, "save");
 
@@ -352,9 +369,9 @@ int heapi_msg_SET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJ
 
     cJSON *sensitivity = cJSON_GetObjectItem(json, "sensitivity");
 
-    uint8_t sens = sensitivity->valueint;
+    uint8_t sens = (uint8_t)sensitivity->valueint;
 
-    int err = zmk_control_set_config(device, ZMK_CONFIG_KEY_MOUSE_SENSITIVITY, &sens, sizeof(sens), cJSON_IsTrue(save));
+    int err = zmk_control_set_config(device, ZMK_CONFIG_KEY_MOUSE_SENSITIVITY, &sens, sizeof(sens), (uint8_t)cJSON_IsTrue(save));
 
     if(err < 0) {
         // Fail
@@ -368,7 +385,9 @@ int heapi_msg_SET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJ
 }
 
 int heapi_msg_GET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-
+#ifdef WIN32
+    UNREFERENCED_PARAMETER(client);
+#endif
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
 
     // RESPONSE
@@ -409,7 +428,9 @@ int heapi_msg_GET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJ
 }
 
 int heapi_msg_ZMK_CONTROL_WRITE (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-
+#ifdef WIN32
+    UNREFERENCED_PARAMETER(client);
+#endif
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
     cJSON *save = cJSON_GetObjectItem(json, "save");
     cJSON *field = cJSON_GetObjectItem(json, "field");
@@ -444,7 +465,7 @@ int heapi_msg_ZMK_CONTROL_WRITE (struct HEApiClient *client, cJSON *json, cJSON 
         return 1;
     }
 
-    int err = zmk_control_set_config(device, (uint16_t)field->valueint, bytes, bytes_len, cJSON_IsTrue(save));
+    int err = zmk_control_set_config(device, (uint16_t)field->valueint, bytes, (uint16_t)bytes_len, (uint8_t)cJSON_IsTrue(save));
 
     free(bytes);
     if(err < 0) {
@@ -461,7 +482,9 @@ int heapi_msg_ZMK_CONTROL_WRITE (struct HEApiClient *client, cJSON *json, cJSON 
 }
 
 int heapi_msg_ZMK_CONTROL_READ (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-
+#ifdef WIN32
+    UNREFERENCED_PARAMETER(client);
+#endif
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
     cJSON *field = cJSON_GetObjectItem(json, "field");
 
