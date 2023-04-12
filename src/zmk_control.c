@@ -160,7 +160,14 @@ int zmk_control_get_config (struct HEDev *device, uint16_t key, void *data, uint
     // Read response
     int len = device_read(device, data, maxlen);
 
-    return len;
+    struct zmk_control_msg_get_config *resp = (struct zmk_control_msg_get_config*)data;
+    if(resp->key == key) {
+        // Offset data by -4, since the first 4 bytes are from struct zmk_control_msg_get_config
+        memmove(data, data + 4, len - 4);
+        return len - 4;
+    }
+
+    return 0;
 }
 
 uint8_t msg_buffer[ZMK_CONTROL_REPORT_SIZE];

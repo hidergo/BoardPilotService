@@ -82,33 +82,35 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
     uint8_t temp_buffer[ZMK_CONTROL_REPORT_SIZE];
 
     int rlen = 0;
+    struct zmk_control_msg_header *hdr = NULL;
     // Receive message, which is written to buffer
 #if defined(_WIN32)
     if(devinfo->bus_type == HID_API_BUS_BLUETOOTH) {
-        while((err = hid_get_input_report(dev, buffer + rlen, len)) > 0) {
+        while((err = hid_get_input_report(dev, temp_buffer, len)) > 0) {
             if(buffer[0] == 0x05) {
+                // Header received
+                hdr = (struct zmk_control_msg_header*)temp_buffer;
+                memcpy(&buffer[hdr->chunk_offset], temp_buffer + sizeof(struct zmk_control_msg_header), hdr->chunk_size);
                 rlen += err;
-                printf("Read %i\n", rlen);
             }
         }
     }
     else {
-        while((err = hid_read_timeout(dev, buffer + rlen, len, 100)) > 0) {
+        while((err = hid_read_timeout(dev, temp_buffer, len, 100)) > 0) {
             if(buffer[0] == 0x05) {
+                // Header received
+                hdr = (struct zmk_control_msg_header*)temp_buffer;
+                memcpy(&buffer[hdr->chunk_offset], temp_buffer + sizeof(struct zmk_control_msg_header), hdr->chunk_size);
                 rlen += err;
-                printf("Read %i\n", rlen);
             }
         }
     }
 #elif defined(__linux__)
-
     while((err = hid_read_timeout(dev, temp_buffer, ZMK_CONTROL_REPORT_SIZE, 100)) > 0) {
         if(temp_buffer[0] == 0x05) {
             // Header received
-            struct zmk_control_msg_header *hdr = (struct zmk_control_msg_header*)temp_buffer;
-
+            hdr = (struct zmk_control_msg_header*)temp_buffer;
             memcpy(&buffer[hdr->chunk_offset], temp_buffer + sizeof(struct zmk_control_msg_header), hdr->chunk_size);
-        
             rlen += err;
         }
     }
@@ -118,10 +120,14 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
         printf("[ERROR] Failed to read from device: %ls\n", hid_error(dev));
     }
     else {
-        printf("[DEBUG] read from %s %i\n", device->path, err);
+        printf("[DEBUG] read from %s l:%i (data:%i)\n", device->path, rlen, hdr == NULL ? 0 : hdr->size);
     }
     hid_close(dev);
-    return rlen;
+    if(hdr != NULL) {
+        return hdr->size;
+    }
+
+    return 0;
 }
 
 int add_device (struct HEProduct *product, struct hid_device_info *info) {
