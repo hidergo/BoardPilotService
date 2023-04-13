@@ -13,6 +13,12 @@
 #include "heapi_msg.h"
 #include "zmk_control.h"
 
+#if defined(_WIN32)
+#define UNUSED UNREFERENCED_PARAMETER
+#else
+#define UNUSED(x) (void)(x)
+#endif
+
 struct HEApiServer apiServer;
 
 void heapi_send (struct HEApiClient *client, cJSON *json) {
@@ -151,7 +157,7 @@ DWORD WINAPI heapi_client_listener (void *data) {
     printf("Client disconnected\n");
     // CLIENT DISCONNECT
     memset(client, 0, sizeof(struct HEApiClient));
-    client->sockfd = (SOCKET)-1;
+    client->sockfd = (socktype_t)-1;
     apiServer.clientCount--;
     // Exit thread
 #if defined(__linux__)
@@ -165,8 +171,9 @@ DWORD WINAPI heapi_client_listener (void *data) {
 void *heapi_server_listener (void *data) {
 #elif defined(_WIN32)
 DWORD WINAPI heapi_server_listener (void *data) {
-    UNREFERENCED_PARAMETER(data);
 #endif
+    UNUSED(data);
+
     while(1) {
         while(apiServer.status == APISERVER_STATE_CONNECTED) {
             // Wait for available connection slots...
@@ -195,7 +202,7 @@ DWORD WINAPI heapi_server_listener (void *data) {
             cli->sockfd = accept(apiServer.sockfd, (struct sockaddr *)&cli->addrInfo, &cli_addr_size);
             if((int)cli->sockfd < 0) {
                 printf("[ERROR] error accepting a socket\n");
-                cli->sockfd = (SOCKET)-1;
+                cli->sockfd = (socktype_t)-1;
                 continue;
             }
             printf("Client connected, starting thread..\n");
@@ -228,7 +235,7 @@ DWORD WINAPI heapi_server_listener (void *data) {
 int heapi_create_server (uint8_t create_thread) {
 
     // WSA startup for windows
-#ifdef _WIN32
+#if defined(_WIN32)
     WSADATA wsa;    
     if(WSAStartup(MAKEWORD(2,2), &wsa) != 0)
     {
@@ -238,12 +245,12 @@ int heapi_create_server (uint8_t create_thread) {
 #endif
 
     int err = 0;
-    apiServer.sockfd = (SOCKET)-1;
+    apiServer.sockfd = (socktype_t)-1;
     apiServer.port = 24429;
     apiServer.status = APISERVER_STATE_NOT_CONNECTED;
     memset(apiServer.clients, 0, sizeof(struct HEApiClient) * MAX_API_CLIENT_COUNT);
     for(int i = 0; i < MAX_API_CLIENT_COUNT; i++) {
-        apiServer.clients[i].sockfd = (SOCKET)-1;
+        apiServer.clients[i].sockfd = (socktype_t)-1;
     }
     apiServer.clientCount = 0;
     // TODO: IPPROTO_TCP?

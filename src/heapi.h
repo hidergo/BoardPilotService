@@ -24,6 +24,12 @@
 
 #define ERR_API_AUTH            0x10
 
+#if defined(_WIN32)
+typedef SOCKET socktype_t;
+#else
+typedef int socktype_t;
+#endif
+
 enum ApiServerState {
     APISERVER_STATE_NOT_CONNECTED,
     APISERVER_STATE_CONNECTED
@@ -64,12 +70,11 @@ enum ApiCommand {
 
 // Api client structure
 struct HEApiClient {
+    socktype_t sockfd;
 #if defined(__linux__)
     pthread_t thread_client_listener;
-    int sockfd;
 #elif defined(_WIN32)
     HANDLE thread_client_listener;
-    SOCKET sockfd;
 #endif
     struct sockaddr_in addrInfo;
     enum ApiClientType clientType;
@@ -80,17 +85,17 @@ struct HEApiClient {
 
 // API server structure
 struct HEApiServer {
+    socktype_t sockfd;
 #if defined(__linux__)
     pthread_t thread_server_listener;
-    int sockfd;
 #elif defined(_WIN32)
     HANDLE thread_server_listener;
-    SOCKET sockfd;
 #endif
     uint16_t port;
     enum ApiServerState status;
     struct HEApiClient clients[MAX_API_CLIENT_COUNT];
     uint8_t clientCount;
+
 };
 
 extern struct HEApiServer apiServer;

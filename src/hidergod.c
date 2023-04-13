@@ -10,6 +10,12 @@
 #include <wchar.h>
 #include <signal.h>
 
+#if defined(_WIN32)
+#define UNUSED UNREFERENCED_PARAMETER
+#else
+#define UNUSED(x) (void)(x)
+#endif
+
 
 #define MAX_STR 255
 
@@ -17,19 +23,19 @@ void cleanup ();
 
 
 void exit_handler(int n) {
-#ifdef WIN32
-	UNREFERENCED_PARAMETER(n);
-#endif
+
+	UNUSED(n);
+
 	cleanup();
 
 	exit(0);
 }
 
 int main(int argc, char **argv) {
-#ifdef WIN32
-	UNREFERENCED_PARAMETER(argc);
-	UNREFERENCED_PARAMETER(argv);
-#endif   
+
+	UNUSED(argc);
+	UNUSED(argv);
+
 	signal(SIGINT, exit_handler);
     int err;
     printf("Starting hid:ergo daemon\n");

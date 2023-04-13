@@ -39,7 +39,6 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
         printf("[WARNING] Could not open device\n");
         return -1;
     }
-    struct hid_device_info *devinfo = hid_get_device_info(dev);
     memset(report_buffer, 0, sizeof(report_buffer));
     memcpy(report_buffer, buffer, sizeof(report_buffer) < len ? sizeof(report_buffer) : len);
 
@@ -72,7 +71,6 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
         printf("[WARNING] Could not open device\n");
         return -1;
     }
-    struct hid_device_info *devinfo = hid_get_device_info(dev);
     int err = 0;
 
     // Set blocking mode
@@ -86,8 +84,11 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
     // Receive message, which is written to buffer
 #if defined(_WIN32)
     if(devinfo->bus_type == HID_API_BUS_BLUETOOTH) {
-        while((err = hid_get_input_report(dev, temp_buffer, len)) > 0) {
+        // TODO: does hid_get_input_report return length?
+        while((err = hid_get_input_report(dev, temp_buffer, ZMK_CONTROL_REPORT_SIZE)) > 0) {
             if(buffer[0] == 0x05) {
+                if(rlen + err > len)
+                    break;
                 // Header received
                 hdr = (struct zmk_control_msg_header*)temp_buffer;
                 memcpy(&buffer[hdr->chunk_offset], temp_buffer + sizeof(struct zmk_control_msg_header), hdr->chunk_size);
@@ -96,8 +97,10 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
         }
     }
     else {
-        while((err = hid_read_timeout(dev, temp_buffer, len, 100)) > 0) {
+        while((err = hid_read_timeout(dev, temp_buffer, ZMK_CONTROL_REPORT_SIZE, 100)) > 0) {
             if(buffer[0] == 0x05) {
+                if(rlen + err > len)
+                    break;
                 // Header received
                 hdr = (struct zmk_control_msg_header*)temp_buffer;
                 memcpy(&buffer[hdr->chunk_offset], temp_buffer + sizeof(struct zmk_control_msg_header), hdr->chunk_size);
@@ -108,6 +111,8 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
 #elif defined(__linux__)
     while((err = hid_read_timeout(dev, temp_buffer, ZMK_CONTROL_REPORT_SIZE, 100)) > 0) {
         if(temp_buffer[0] == 0x05) {
+            if(rlen + err > len)
+                break;
             // Header received
             hdr = (struct zmk_control_msg_header*)temp_buffer;
             memcpy(&buffer[hdr->chunk_offset], temp_buffer + sizeof(struct zmk_control_msg_header), hdr->chunk_size);
@@ -227,7 +232,7 @@ int hedev_poll_usb_devices () {
     char buff[64];
     while (curdev != NULL) {
 
-        for(int i = 0; i < PRODUCT_COUNT; i++) {
+        for(int i = 0; i < (int)PRODUCT_COUNT; i++) {
             // Match to a device
             struct HEProduct *prod = (struct HEProduct *)&PRODUCT_LIST[i];
             uint8_t dev_ok = 0;
@@ -327,7 +332,7 @@ void hedev_init () {
 
 void hedev_print_products () {
     printf("Devices:\n");
-    for(int i = 0; i < PRODUCT_COUNT; i++) {
+    for(int i = 0; i < (int)PRODUCT_COUNT; i++) {
         const struct HEProduct *dev = &PRODUCT_LIST[i];
         printf("  Device %i:\n", i);
         printf("    VID:PID:      %04X:%04X\n", dev->vendorid, dev->productid);

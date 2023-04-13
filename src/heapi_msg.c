@@ -5,6 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(_WIN32)
+#define UNUSED UNREFERENCED_PARAMETER
+#else
+#define UNUSED(x) (void)(x)
+#endif
+
 // File containing message parsing, response building
 
 
@@ -40,10 +46,9 @@ int heapi_msg_AUTH (struct HEApiClient *client, cJSON *json, cJSON *resp) {
 }
 
 int heapi_msg_DEVICES (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-#ifdef WIN32
-    UNREFERENCED_PARAMETER(client);
-    UNREFERENCED_PARAMETER(json);
-#endif
+    UNUSED(client);
+    UNUSED(json);
+    
 
     int err = 0;
 
@@ -59,9 +64,7 @@ int heapi_msg_DEVICES (struct HEApiClient *client, cJSON *json, cJSON *resp) {
 }
 
 int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-#ifdef WIN32
-    UNREFERENCED_PARAMETER(client);
-#endif
+    UNUSED(client);
 
     cJSON *regs = cJSON_GetObjectItem(json, "regs");
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
@@ -157,9 +160,8 @@ int heapi_msg_SET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp
 }
 
 int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-#ifdef WIN32
-    UNREFERENCED_PARAMETER(client);
-#endif
+    UNUSED(client);
+
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
 
     // RESPONSE
@@ -222,9 +224,8 @@ int heapi_msg_GET_IQS_REGS (struct HEApiClient *client, cJSON *json, cJSON *resp
 }
 
 int heapi_msg_SET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-#ifdef WIN32
-    UNREFERENCED_PARAMETER(client);
-#endif
+    UNUSED(client);
+    
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
     cJSON *save = cJSON_GetObjectItem(json, "save");
 
@@ -279,9 +280,8 @@ int heapi_msg_SET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) 
 }
 
 int heapi_msg_GET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-#ifdef WIN32
-    UNREFERENCED_PARAMETER(client);
-#endif
+    UNUSED(client);
+    
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
 
     // RESPONSE
@@ -341,9 +341,8 @@ int heapi_msg_GET_KEYMAP (struct HEApiClient *client, cJSON *json, cJSON *resp) 
 }
 
 int heapi_msg_SET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-#ifdef WIN32
-    UNREFERENCED_PARAMETER(client);
-#endif
+    UNUSED(client);
+    
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
     cJSON *save = cJSON_GetObjectItem(json, "save");
 
@@ -385,9 +384,8 @@ int heapi_msg_SET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJ
 }
 
 int heapi_msg_GET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-#ifdef WIN32
-    UNREFERENCED_PARAMETER(client);
-#endif
+    UNUSED(client);
+    
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
 
     // RESPONSE
@@ -428,9 +426,8 @@ int heapi_msg_GET_MOUSE_SENSITIVITY (struct HEApiClient *client, cJSON *json, cJ
 }
 
 int heapi_msg_ZMK_CONTROL_WRITE (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-#ifdef WIN32
-    UNREFERENCED_PARAMETER(client);
-#endif
+    UNUSED(client);
+    
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
     cJSON *save = cJSON_GetObjectItem(json, "save");
     cJSON *field = cJSON_GetObjectItem(json, "field");
@@ -482,9 +479,8 @@ int heapi_msg_ZMK_CONTROL_WRITE (struct HEApiClient *client, cJSON *json, cJSON 
 }
 
 int heapi_msg_ZMK_CONTROL_READ (struct HEApiClient *client, cJSON *json, cJSON *resp) {
-#ifdef WIN32
-    UNREFERENCED_PARAMETER(client);
-#endif
+    UNUSED(client);
+    
     cJSON *device_object = cJSON_GetObjectItem(json, "device");
     cJSON *field = cJSON_GetObjectItem(json, "field");
 

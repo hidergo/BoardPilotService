@@ -25,7 +25,7 @@ size_t hex_to_bytes (const char *hex_string, uint8_t **bytes) {
         return 0;   
     }
 
-    for(int i = 0; i < hex_len / 2; i++) {
+    for(int i = 0; i < (int)hex_len / 2; i++) {
         char hx[3] = { hex_string[i * 2], hex_string[i * 2 + 1], 0 };
         (*bytes)[i] = (uint8_t)strtoul(hx, NULL, 16);
     }
@@ -41,7 +41,7 @@ char *bytes_to_hex (uint8_t *bytes, size_t len) {
     }
     hex[len * 2] = 0;
 
-    for(int i = 0; i < len; i++) {
+    for(int i = 0; i < (int)len; i++) {
         snprintf(&hex[i * 2], 3, "%02X", bytes[i]);
     }
 
@@ -199,7 +199,7 @@ int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_head
     int bytes_left = header->size;
     while(bytes_left > 0) {
         header->chunk_offset = header->size - (uint16_t)bytes_left;
-        header->chunk_size = bytes_left <= ZMK_CONTROL_REPORT_DATA_SIZE ? (uint8_t)bytes_left : (uint8_t)ZMK_CONTROL_REPORT_DATA_SIZE;
+        header->chunk_size = bytes_left <= (int)ZMK_CONTROL_REPORT_DATA_SIZE ? (uint8_t)bytes_left : (uint8_t)ZMK_CONTROL_REPORT_DATA_SIZE;
         memcpy(msg_buffer, header, sizeof(struct zmk_control_msg_header));
         memcpy(msg_buffer + sizeof(struct zmk_control_msg_header), data + header->chunk_offset, header->chunk_size);
         err = device_write(device, msg_buffer, ZMK_CONTROL_REPORT_SIZE);
