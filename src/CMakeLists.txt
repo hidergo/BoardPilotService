@@ -6,10 +6,10 @@ target_sources(hidergodm PRIVATE heapi_msg.c)
 
 # NOTE: no `find_package` is required, since HIDAPI targets are already a part of the project tree
 if (UNIX)
-  target_compile_options(hidergodm PRIVATE -Wall -Wextra -Wpedantic -Werror -Wno-format-truncation)
+  target_compile_options(hidergodm PRIVATE -Wall -Wextra -Wpedantic -Wno-format-truncation)
   target_link_libraries(hidergodm PRIVATE hidapi::hidraw)
 endif (UNIX)
 if (WIN32)
   target_link_libraries(hidergodm PRIVATE hidapi::hidapi)
-  target_compile_options(hidergodm PRIVATE /W4 /WX)
+  target_compile_options(hidergodm PRIVATE /W4)
 endif (WIN32)

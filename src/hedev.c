@@ -44,6 +44,7 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
 
     int err;
 #if defined(_WIN32)
+    struct hid_device_info *devinfo = hid_get_device_info(dev);
     if(devinfo->bus_type == HID_API_BUS_BLUETOOTH) {
         err = hid_set_output_report(dev, report_buffer, sizeof(report_buffer));
     }
@@ -83,6 +84,7 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
     struct zmk_control_msg_header *hdr = NULL;
     // Receive message, which is written to buffer
 #if defined(_WIN32)
+    struct hid_device_info *devinfo = hid_get_device_info(dev);
     if(devinfo->bus_type == HID_API_BUS_BLUETOOTH) {
         // TODO: does hid_get_input_report return length?
         while((err = hid_get_input_report(dev, temp_buffer, ZMK_CONTROL_REPORT_SIZE)) > 0) {
@@ -141,9 +143,14 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
         if(device_list[i] == NULL) {
             struct HEDev *dev = malloc(sizeof(struct HEDev));
             dev->product = product;
+            #if defined(_WIN32)
+            strncpy_s(dev->path, 256, info->path, 255);
+            wcsncpy_s(dev->serial, 64, info->serial_number, 63);
+            #else
             strncpy(dev->path, info->path, 255);
-            dev->active = 1;
             wcsncpy(dev->serial, info->serial_number, 63);
+            #endif
+            dev->active = 1;
             if(dev->serial[0] == 0) {
                 // Bluetooth device
                 dev->protocol = HED_PROTO_BT;
