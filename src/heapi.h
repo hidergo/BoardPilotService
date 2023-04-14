@@ -52,17 +52,10 @@ enum ApiCommand {
     APICMD_REGISTER =       0x01,
     APICMD_DEVICES =        0x10,
 
-    APICMD_SET_KEYMAP =     0x20,
-    APICMD_GET_KEYMAP =     0x21,
-    APICMD_SET_MOUSE_SENS = 0x24,
-    APICMD_GET_MOUSE_SENS = 0x25,
-
     // Generic write to the device
     APICMD_ZMK_CONTROL_WRITE =  0x40,
     APICMD_ZMK_CONTROL_READ =   0x41,
-
-    APICMD_SET_IQS_REGS =   0x60,
-    APICMD_GET_IQS_REGS =   0x61,
+    
     // Events
     APICMD_EVENT =          0x80
 

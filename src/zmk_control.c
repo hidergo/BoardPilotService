@@ -117,19 +117,6 @@ int zmk_control_msg_set_time (struct HEDev *device) {
     return zmk_control_set_config(device, ZMK_CONFIG_KEY_DATETIME, &_time_msg, sizeof(_time_msg), 0);
 }
 
-int zmk_control_msg_set_mouse_sensitivity (struct HEDev *device, uint8_t sensitivity) {
-
-    uint8_t sens = sensitivity;
-
-    return zmk_control_set_config(device, ZMK_CONFIG_KEY_MOUSE_SENSITIVITY, &sens, sizeof(sens), 1);
-}
-
-int zmk_control_msg_set_iqs5xx_registers (struct HEDev *device, struct iqs5xx_reg_config config, uint8_t save) {
-    struct iqs5xx_reg_config conf = config;
-
-    return zmk_control_set_config(device, ZMK_CONFIG_CUSTOM_IQS5XX_REGS, &conf, sizeof(conf), save);
-}
-
 int zmk_control_set_config (struct HEDev *device, uint16_t key, void *data, uint16_t len, uint8_t save) {
     // Output buffer
     uint8_t buff[4092];

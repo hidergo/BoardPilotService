@@ -161,23 +161,5 @@ int zmk_control_get_config (struct HEDev *device, uint16_t key, void *data, uint
  * @return int 
  */
 int zmk_control_msg_set_time (struct HEDev *device);
-/**
- * @brief Sets mouse sensitivity
- * 
- * @param device 
- * @param sensitivity Value range multiplier, calculated as (float)sensitivity / 128.0F, so 128 is 1
- * @return int 
- */
-int zmk_control_msg_set_mouse_sensitivity (struct HEDev *device, uint8_t sensitivity);
-
-/**
- * @brief Sets the iqs5xx registers
- * 
- * @param device 
- * @param config 
- * @param save 
- * @return int 
- */
-int zmk_control_msg_set_iqs5xx_registers (struct HEDev *device, struct iqs5xx_reg_config config, uint8_t save);
 
 #endif
