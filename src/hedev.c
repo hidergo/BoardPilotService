@@ -100,7 +100,7 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
     }
     else {
         while((err = hid_read_timeout(dev, temp_buffer, ZMK_CONTROL_REPORT_SIZE, 100)) > 0) {
-            if(buffer[0] == 0x05) {
+            if(temp_buffer[0] == 0x05) {
                 if(rlen + err > len)
                     break;
                 // Header received
