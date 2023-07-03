@@ -158,7 +158,7 @@ int heapi_msg_ZMK_CONTROL_READ (struct HEApiClient *client, cJSON *json, cJSON *
     cJSON_AddBoolToObject(resp, "status", cJSON_True);
     cJSON_AddStringToObject(resp, "device", device_object->valuestring);
     cJSON_AddStringToObject(resp, "field", field->valuestring);
-    cJSON_AddStringToObject(resp, "data", buffer_hex);
+    cJSON_AddStringToObject(resp, "bytes", buffer_hex);
 
     free(buffer_hex);
 

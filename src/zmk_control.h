@@ -89,9 +89,14 @@ enum zmk_config_key {
     // Fields that should be saved to NVS, such as keymap or mouse sensitivity
     // --------------------------------------------------------------
 
-    // 0x0001 - 0x001F: Misc device config fields
-    // Device name for BLE/USB
-    ZMK_CONFIG_KEY_DEVICE_NAME =            0x0001,
+    // 0x0001 - 0x0009: Device information fields
+    // Device info (struct zmk_config_device_info)
+    ZMK_CONFIG_KEY_DEVICE_INFO =            0x0001,
+    // 0x000A - 0x001F: Device configuration
+    // Sleep timeout (u16) (0 = never sleep)
+    ZMK_CONFIG_KEY_SLEEP_TIMEOUT =          0x000A,
+    // Peripheral sleep timeout (u16) (0 = never sleep)
+    ZMK_CONFIG_KEY_PERIPHERAL_SLEEP_TIMEOUT = 0x000B,
 
 
     // 0x0020 - 0x003F: Keyboard configurations 
@@ -99,12 +104,19 @@ enum zmk_config_key {
     ZMK_CONFIG_KEY_KEYMAP =                 0x0020,
 
     // 0x0040 - 0x005F: Mouse/trackpad configurations
-    // Mouse sensitivity
+    // Mouse sensitivity (u8)
     ZMK_CONFIG_KEY_MOUSE_SENSITIVITY =      0x0040,
-    // Mouse Y scroll sensitivity
+    // Mouse Y scroll sensitivity (u8)
     ZMK_CONFIG_KEY_SCROLL_SENSITIVITY =     0x0041,
-    // Mouse X pan sensitivity
+    // Mouse X pan sensitivity (u8)
     ZMK_CONFIG_KEY_PAN_SENSITIVITY =        0x0042,
+    // Mouse scroll direction (u8)
+    ZMK_CONFIG_KEY_SCROLL_DIRECTION =       0x0043,
+    // Touchpad click type (u8) (0 = normal, 1 = left click on left side, right click on right side)
+    ZMK_CONFIG_KEY_TP_CLICK_TYPE =          0x0044,
+
+    // 0x0060 - 0x007F: Display configurations
+    ZMK_CONFIG_KEY_DISPLAY_CODE =           0x0060,
 
     // --------------------------------------------------------------
     // 0x4000 - 0x7FFF: (Recommended) Non-saved fields
@@ -116,12 +128,13 @@ enum zmk_config_key {
 
 
     // --------------------------------------------------------------
-    // 0x8000 - 0xFFFF: Custom fields
+    // 0x6000 - 0x8000: Custom fields
     // Fields that should be used if custom fields are needed
     // --------------------------------------------------------------
+    
     // hid:ergo device specific fields
     // IQS5XX register configuration
-    ZMK_CONFIG_CUSTOM_IQS5XX_REGS =         0x8001,
+    ZMK_CONFIG_CUSTOM_IQS5XX_REGS =         0x6001,
 
 };
 
