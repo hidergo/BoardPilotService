@@ -3,7 +3,7 @@
 # Creating a user variable for possible sudo
 USER=$(who am i | awk '{print $1}')
 
-SERVICE_PATH="/etc/systemd/system/hidergod.service"
+SERVICE_PATH="/etc/systemd/system/bpservice.service"
 
 #if [ -z "$USER" ]
 #then
@@ -12,7 +12,7 @@ SERVICE_PATH="/etc/systemd/system/hidergod.service"
 #    echo "Running with user: $USER"
 #fi
 
-echo "Installing hidergod..."
+echo "Installing bpservice..."
 
 echo "Building..."
 /usr/bin/cmake --build ./build --config Release --target all --
@@ -33,18 +33,18 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Move package in to /usr/bin
-echo "Moving built package into /usr/bin/hidergodm..."
-cp ./build/src/hidergodm /usr/bin/hidergodm
+echo "Moving built package into /usr/bin/bpservice..."
+cp ./build/bpservice /usr/bin/bpservice
 if [ $? -eq 0 ]; then
     echo "OK"
 else
-    echo "Failed to move hidergodm to /usr/bin/hidergodm"
+    echo "Failed to move bpservice to /usr/bin/bpservice"
     exit 1
 fi
 
 # Install service
-cp ./misc/hidergod-service.service $SERVICE_PATH
+cp ./misc/bpservice-service.service $SERVICE_PATH
 
-echo "Installation finished, run \`sudo systemctl start hidergod\` or \`sudo service hidergod start\`"
-echo "Enable the service at startup: \`sudo systemctl enable hidergod\`"
+echo "Installation finished, run \`sudo systemctl start bpservice\` or \`sudo service bpservice start\`"
+echo "Enable the service at startup: \`sudo systemctl enable bpservice\`"
 

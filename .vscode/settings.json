@@ -1,7 +1,7 @@
 {
     "files.associations": {
         "hidapi.h": "c",
-        "hedev_msg.h": "c",
+        "bpdev_msg.h": "c",
         "hidsdi.h": "c",
         "hidapi_hidsdi.h": "c",
         "hidclass.h": "c",

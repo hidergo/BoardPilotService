@@ -10,7 +10,7 @@
 #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop))
 #endif
 
-#include "hedef.h"
+#include "bpdef.h"
 
 #define ZMK_CONTROL_MAX_MESSAGE_LENGTH      0x1000
 
@@ -142,7 +142,7 @@ size_t hex_to_bytes (const char *hex_string, uint8_t **bytes);
 char *bytes_to_hex (uint8_t *bytes, size_t len);
 
 int zmk_control_build_header (struct zmk_control_msg_header *header, enum zmk_control_cmd_t cmd, uint16_t size);
-int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_header *header, uint8_t *data);
+int zmk_control_write_message (struct BPDev *device, struct zmk_control_msg_header *header, uint8_t *data);
 
 /**
  * @brief Write device config field
@@ -154,7 +154,7 @@ int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_head
  * @param save 
  * @return int 
  */
-int zmk_control_set_config (struct HEDev *device, uint16_t key, void *data, uint16_t len, uint8_t save);
+int zmk_control_set_config (struct BPDev *device, uint16_t key, void *data, uint16_t len, uint8_t save);
 
 /**
  * @brief Read device config field
@@ -165,7 +165,7 @@ int zmk_control_set_config (struct HEDev *device, uint16_t key, void *data, uint
  * @param maxlen
  * @return int 
  */
-int zmk_control_get_config (struct HEDev *device, uint16_t key, void *data, uint16_t maxlen);
+int zmk_control_get_config (struct BPDev *device, uint16_t key, void *data, uint16_t maxlen);
 
 /**
  * @brief Sets the device time
@@ -173,6 +173,6 @@ int zmk_control_get_config (struct HEDev *device, uint16_t key, void *data, uint
  * @param device 
  * @return int 
  */
-int zmk_control_msg_set_time (struct HEDev *device);
+int zmk_control_msg_set_time (struct BPDev *device);
 
 #endif

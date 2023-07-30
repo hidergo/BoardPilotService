@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <hidapi.h>
-#include "hedev.h"
-#include "heapi.h"
+#include "bpdev.h"
+#include "bpapi.h"
 #if defined(__linux__)
 #include <unistd.h>
 #elif defined(_WIN32)
@@ -41,10 +41,10 @@ int main(int argc, char **argv) {
     printf("Starting hid:ergo daemon\n");
     printf("* Defined devices: %i\n", (int)PRODUCT_COUNT);
 
-   	hedev_print_products();
+   	bpdev_print_products();
 
     printf("Starting API server...\n");
-    err = heapi_create_server(1);
+    err = bpapi_create_server(1);
 	if(err) {
 		printf("[ERROR] Failed to start API Server!\n");
 		return 1;
@@ -54,8 +54,8 @@ int main(int argc, char **argv) {
 	// Init HIDAPI library
 	hid_init();
 
-	// Init hedev
-	hedev_init();
+	// Init bpdev
+	bpdev_init();
 
 	printf("* Delaying before first poll...\n");
 	
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 		#elif defined(_WIN32)
 			Sleep(2000);
 		#endif
-		hedev_poll_usb_devices();
+		bpdev_poll_usb_devices();
 	}
 
 	cleanup();
@@ -82,6 +82,6 @@ void cleanup () {
 	hid_exit();
 
 	// Cleanup for the server
-	heapi_cleanup();
+	bpapi_cleanup();
 
 }

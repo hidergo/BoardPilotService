@@ -1,4 +1,4 @@
-#include "heapi.h"
+#include "bpapi.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,8 +9,8 @@
 #endif
 #include <assert.h>
 #include "cJSON/cJSON.h"
-#include "hedef.h"
-#include "heapi_msg.h"
+#include "bpdef.h"
+#include "bpapi_msg.h"
 #include "zmk_control.h"
 
 #if defined(_WIN32)
@@ -19,9 +19,9 @@
 #define UNUSED(x) (void)(x)
 #endif
 
-struct HEApiServer apiServer;
+struct BPApiServer apiServer;
 
-void heapi_send (struct HEApiClient *client, cJSON *json) {
+void bpapi_send (struct BPApiClient *client, cJSON *json) {
     char *buffer_out;
     buffer_out = cJSON_PrintUnformatted(json);
     if(buffer_out == NULL) {
@@ -42,12 +42,12 @@ void heapi_send (struct HEApiClient *client, cJSON *json) {
     cJSON_free(buffer_out);
 }
 
-int heapi_parse_client_message (struct HEApiClient *client) {
+int bpapi_parse_client_message (struct BPApiClient *client) {
     int err = 0;
     cJSON *json = cJSON_Parse((const char *)client->recvBuffer);
 
     // Create response object
-    // cmd and reqid is checked in heapi_msg_validate, so they shouldn't be null
+    // cmd and reqid is checked in bpapi_msg_validate, so they shouldn't be null
     cJSON *resp = cJSON_CreateObject();
 
     if(json == NULL) {
@@ -65,7 +65,7 @@ int heapi_parse_client_message (struct HEApiClient *client) {
         return 1;
     }
     // Check for incorrect format
-    err = heapi_msg_validate(json);
+    err = bpapi_msg_validate(json);
     if(err) {
         goto clean;
     }
@@ -78,24 +78,24 @@ int heapi_parse_client_message (struct HEApiClient *client) {
     switch (cmd->valueint)
     {
         case APICMD_REGISTER:
-            err = heapi_msg_AUTH(client, json, resp);
+            err = bpapi_msg_AUTH(client, json, resp);
             printf("Client register status: %i\n", err);
             break;
         case APICMD_DEVICES:
-            err = heapi_msg_DEVICES(client, json, resp);
+            err = bpapi_msg_DEVICES(client, json, resp);
             break;
         case APICMD_ZMK_CONTROL_WRITE:
-            err = heapi_msg_ZMK_CONTROL_WRITE(client, json, resp);
+            err = bpapi_msg_ZMK_CONTROL_WRITE(client, json, resp);
             break;
         case APICMD_ZMK_CONTROL_READ:
-            err = heapi_msg_ZMK_CONTROL_READ(client, json, resp);
+            err = bpapi_msg_ZMK_CONTROL_READ(client, json, resp);
             break;
         default:
             break;
     }
 
     // Send response
-    heapi_send(client, resp);
+    bpapi_send(client, resp);
     
     clean:
 
@@ -106,11 +106,11 @@ int heapi_parse_client_message (struct HEApiClient *client) {
 }
 
 #if defined(__linux__)
-void *heapi_client_listener (void *data) {
+void *bpapi_client_listener (void *data) {
 #elif defined(_WIN32)
-DWORD WINAPI heapi_client_listener (void *data) {
+DWORD WINAPI bpapi_client_listener (void *data) {
 #endif
-    struct HEApiClient *client = (struct HEApiClient*)data;
+    struct BPApiClient *client = (struct BPApiClient*)data;
     printf("Client connected\n");
     
     while(client->connected) {
@@ -123,7 +123,7 @@ DWORD WINAPI heapi_client_listener (void *data) {
             break;
         }
         client->recvBuffer[len] = 0;
-        int err = heapi_parse_client_message(client);
+        int err = bpapi_parse_client_message(client);
         if(err != 0) {
             printf("[WARNING] Message parse error 0x%X\n", err);
             //break;
@@ -138,7 +138,7 @@ DWORD WINAPI heapi_client_listener (void *data) {
 #endif
     printf("Client disconnected\n");
     // CLIENT DISCONNECT
-    memset(client, 0, sizeof(struct HEApiClient));
+    memset(client, 0, sizeof(struct BPApiClient));
     client->sockfd = (socktype_t)-1;
     apiServer.clientCount--;
     // Exit thread
@@ -150,9 +150,9 @@ DWORD WINAPI heapi_client_listener (void *data) {
 }
 
 #if defined(__linux__)
-void *heapi_server_listener (void *data) {
+void *bpapi_server_listener (void *data) {
 #elif defined(_WIN32)
-DWORD WINAPI heapi_server_listener (void *data) {
+DWORD WINAPI bpapi_server_listener (void *data) {
 #endif
     UNUSED(data);
 
@@ -167,7 +167,7 @@ DWORD WINAPI heapi_server_listener (void *data) {
                 #endif
             }
 
-            struct HEApiClient *cli = NULL;
+            struct BPApiClient *cli = NULL;
 
             // Get first available slot for the client
             for(int i = 0; i < MAX_API_CLIENT_COUNT; i++) {
@@ -191,12 +191,12 @@ DWORD WINAPI heapi_server_listener (void *data) {
             cli->connected = 1;
             apiServer.clientCount++;
             #if defined(__linux__)
-                if(pthread_create(&cli->thread_client_listener, NULL, heapi_client_listener, cli)) {
+                if(pthread_create(&cli->thread_client_listener, NULL, bpapi_client_listener, cli)) {
                     printf("[ERROR] failed to create client thread\n");
                     exit(1);
                 }
             #elif defined(_WIN32)
-                apiServer.thread_server_listener = CreateThread(NULL, 0, heapi_client_listener, cli, 0, NULL);
+                apiServer.thread_server_listener = CreateThread(NULL, 0, bpapi_client_listener, cli, 0, NULL);
                 if(apiServer.thread_server_listener == NULL) {
                     printf("[ERROR] failed to create client thread\n");
                     exit(1);
@@ -210,11 +210,11 @@ DWORD WINAPI heapi_server_listener (void *data) {
             Sleep(5000);
         #endif
         printf("Recreate server\n");
-        heapi_create_server(0);
+        bpapi_create_server(0);
     }
 }
 
-int heapi_create_server (uint8_t create_thread) {
+int bpapi_create_server (uint8_t create_thread) {
 
     // WSA startup for windows
 #if defined(_WIN32)
@@ -230,7 +230,7 @@ int heapi_create_server (uint8_t create_thread) {
     apiServer.sockfd = (socktype_t)-1;
     apiServer.port = 24429;
     apiServer.status = APISERVER_STATE_NOT_CONNECTED;
-    memset(apiServer.clients, 0, sizeof(struct HEApiClient) * MAX_API_CLIENT_COUNT);
+    memset(apiServer.clients, 0, sizeof(struct BPApiClient) * MAX_API_CLIENT_COUNT);
     for(int i = 0; i < MAX_API_CLIENT_COUNT; i++) {
         apiServer.clients[i].sockfd = (socktype_t)-1;
     }
@@ -274,9 +274,9 @@ int heapi_create_server (uint8_t create_thread) {
 	apiServer.status = APISERVER_STATE_CONNECTED;
     if(create_thread) {
         #if defined(__linux__)
-            err = pthread_create(&apiServer.thread_server_listener, NULL, heapi_server_listener, NULL);
+            err = pthread_create(&apiServer.thread_server_listener, NULL, bpapi_server_listener, NULL);
         #elif defined(_WIN32)
-            apiServer.thread_server_listener = CreateThread(NULL, 0, heapi_server_listener, NULL, 0, NULL);
+            apiServer.thread_server_listener = CreateThread(NULL, 0, bpapi_server_listener, NULL, 0, NULL);
             if(apiServer.thread_server_listener == NULL) {
                 err = -1;
             }
@@ -286,7 +286,7 @@ int heapi_create_server (uint8_t create_thread) {
 }
 
 // Triggers an event and transmits to clients
-void heapi_trigger_event (enum ApiEventType event, struct HEDev *device) {
+void bpapi_trigger_event (enum ApiEventType event, struct BPDev *device) {
     cJSON *msg = cJSON_CreateObject();
     cJSON_AddNumberToObject(msg, "cmd", (const double)APICMD_EVENT);
     cJSON_AddNumberToObject(msg, "type", (const double)event);
@@ -294,18 +294,18 @@ void heapi_trigger_event (enum ApiEventType event, struct HEDev *device) {
     switch(event) {
         case APIEVENT_DEVICE_CONNECTED:
         case APIEVENT_DEVICE_DISCONNECTED:
-            cJSON_AddItemToObject(msg, "device", hedev_to_json(device));
+            cJSON_AddItemToObject(msg, "device", bpdev_to_json(device));
             break;
         default:
             break;
     }
 
-    heapi_send(NULL, msg);
+    bpapi_send(NULL, msg);
 
     cJSON_Delete(msg);
 }
 
-void heapi_cleanup () {
+void bpapi_cleanup () {
     // Close connections
     for(int i = 0; i < MAX_API_CLIENT_COUNT; i++) {
         if(apiServer.clients[i].sockfd >= 0 && apiServer.clients[i].connected) {

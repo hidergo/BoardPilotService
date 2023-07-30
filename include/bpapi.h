@@ -14,9 +14,9 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #endif
-#include "hedev.h"
+#include "bpdev.h"
 
-#define HEAPI_KEY "p*kG462jhJBY166EZLKxf9Du"
+#define BPAPI_KEY "p*kG462jhJBY166EZLKxf9Du"
 
 #define MAX_API_CLIENT_COUNT    8
 #define MAX_SUBSCRIPTION_COUNT  8
@@ -62,7 +62,7 @@ enum ApiCommand {
 };
 
 // Api client structure
-struct HEApiClient {
+struct BPApiClient {
     socktype_t sockfd;
 #if defined(__linux__)
     pthread_t thread_client_listener;
@@ -77,7 +77,7 @@ struct HEApiClient {
 };
 
 // API server structure
-struct HEApiServer {
+struct BPApiServer {
     socktype_t sockfd;
 #if defined(__linux__)
     pthread_t thread_server_listener;
@@ -86,17 +86,17 @@ struct HEApiServer {
 #endif
     uint16_t port;
     enum ApiServerState status;
-    struct HEApiClient clients[MAX_API_CLIENT_COUNT];
+    struct BPApiClient clients[MAX_API_CLIENT_COUNT];
     uint8_t clientCount;
 
 };
 
-extern struct HEApiServer apiServer;
+extern struct BPApiServer apiServer;
 
-int heapi_create_server (uint8_t create_thread);
+int bpapi_create_server (uint8_t create_thread);
 
-void heapi_trigger_event (enum ApiEventType eventType, struct HEDev *device);
+void bpapi_trigger_event (enum ApiEventType eventType, struct BPDev *device);
 
-void heapi_cleanup ();
+void bpapi_cleanup ();
 
 #endif

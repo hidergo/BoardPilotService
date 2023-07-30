@@ -1,11 +1,11 @@
-#include "hedev.h"
+#include "bpdev.h"
 #include <stdio.h>
 #include <string.h>
-#include "heapi.h"
+#include "bpapi.h"
 #include "zmk_control.h"
 
-// hid:ergo products, used to find devices
-const struct HEProduct PRODUCT_LIST[] = {
+// Products list, used to find devices
+const struct BPProduct PRODUCT_LIST[] = {
     {
         // hid:ergo Disconnect MK1
         0x1915,     // VID 
@@ -26,14 +26,14 @@ const struct HEProduct PRODUCT_LIST[] = {
         1           // Revision
     }*/
 };
-const size_t PRODUCT_COUNT = sizeof(PRODUCT_LIST) / sizeof(struct HEProduct);
+const size_t PRODUCT_COUNT = sizeof(PRODUCT_LIST) / sizeof(struct BPProduct);
 
 // Device list TODO: Dynamic allocation later
-struct HEDev *device_list[HED_DEVICE_ALLOC_SIZE];
+struct BPDev *device_list[BP_DEVICE_ALLOC_SIZE];
 // Live device count
 int device_count = 0;
 
-int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
+int device_write (struct BPDev *device, uint8_t *buffer, uint8_t len) {
     hid_device *dev = hid_open_path(device->path);
     if(dev == NULL) {
         printf("[WARNING] Could not open device\n");
@@ -66,7 +66,7 @@ int device_write (struct HEDev *device, uint8_t *buffer, uint8_t len) {
     return err;
 }
 
-int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
+int device_read (struct BPDev *device, uint8_t *buffer, uint16_t len) {
     hid_device *dev = hid_open_path(device->path);
     if(dev == NULL) {
         printf("[WARNING] Could not open device\n");
@@ -137,11 +137,11 @@ int device_read (struct HEDev *device, uint8_t *buffer, uint16_t len) {
     return 0;
 }
 
-int add_device (struct HEProduct *product, struct hid_device_info *info) {
+int add_device (struct BPProduct *product, struct hid_device_info *info) {
     int f = 0;
-    for(int i = 0; i < HED_DEVICE_ALLOC_SIZE; i++) {
+    for(int i = 0; i < BP_DEVICE_ALLOC_SIZE; i++) {
         if(device_list[i] == NULL) {
-            struct HEDev *dev = malloc(sizeof(struct HEDev));
+            struct BPDev *dev = malloc(sizeof(struct BPDev));
             dev->product = product;
             #if defined(_WIN32)
             strncpy_s(dev->path, 256, info->path, 255);
@@ -153,15 +153,15 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
             dev->active = 1;
             if(dev->serial[0] == 0) {
                 // Bluetooth device
-                dev->protocol = HED_PROTO_BT;
+                dev->protocol = BP_PROTO_BT;
             }
             else {
                 // USB device
-                dev->protocol = HED_PROTO_USB;
+                dev->protocol = BP_PROTO_USB;
             }
             device_list[i] = dev;
             f = 1;
-            heapi_trigger_event(APIEVENT_DEVICE_CONNECTED, dev);
+            bpapi_trigger_event(APIEVENT_DEVICE_CONNECTED, dev);
             printf("Device %s %s (%X:%X) connected\n", dev->product->manufacturer, dev->product->product, dev->product->vendorid, dev->product->productid);
             // Set device time
             zmk_control_msg_set_time(dev);
@@ -180,8 +180,8 @@ int add_device (struct HEProduct *product, struct hid_device_info *info) {
     return 0;
 }
 
-struct HEDev *find_device (struct HEProduct *product, const wchar_t *serial, const char *path) {
-    for(int i = 0; i < HED_DEVICE_ALLOC_SIZE; i++) {
+struct BPDev *find_device (struct BPProduct *product, const wchar_t *serial, const char *path) {
+    for(int i = 0; i < BP_DEVICE_ALLOC_SIZE; i++) {
         if(device_list[i] != NULL) {
             if(product == NULL || product == device_list[i]->product) {
                 if(serial == NULL) {
@@ -202,10 +202,10 @@ struct HEDev *find_device (struct HEProduct *product, const wchar_t *serial, con
     return NULL;
 }
 
-void remove_device (struct HEDev *dev) {
-    for(int i = 0; i < HED_DEVICE_ALLOC_SIZE; i++) {
+void remove_device (struct BPDev *dev) {
+    for(int i = 0; i < BP_DEVICE_ALLOC_SIZE; i++) {
         if(dev == device_list[i]) {
-            heapi_trigger_event(APIEVENT_DEVICE_DISCONNECTED, dev);
+            bpapi_trigger_event(APIEVENT_DEVICE_DISCONNECTED, dev);
             
             printf("Device %s %s (%X:%X) disconnected\n", dev->product->manufacturer, dev->product->product, dev->product->vendorid, dev->product->productid);
             free(dev);
@@ -218,16 +218,16 @@ void remove_device (struct HEDev *dev) {
 
 // Removes inactive devices
 void device_cleanup () {
-    for(int i = 0; i < HED_DEVICE_ALLOC_SIZE; i++) {
+    for(int i = 0; i < BP_DEVICE_ALLOC_SIZE; i++) {
         if(device_list[i] != NULL && !device_list[i]->active) {
             remove_device(device_list[i]);
         }
     }
 }
 
-int hedev_poll_usb_devices () {
+int bpdev_poll_usb_devices () {
     // Reset device active flags
-    for(int i = 0; i < HED_DEVICE_ALLOC_SIZE; i++) {
+    for(int i = 0; i < BP_DEVICE_ALLOC_SIZE; i++) {
         if(device_list[i] != NULL) {
             device_list[i]->active = 0;
         }
@@ -241,7 +241,7 @@ int hedev_poll_usb_devices () {
 
         for(int i = 0; i < (int)PRODUCT_COUNT; i++) {
             // Match to a device
-            struct HEProduct *prod = (struct HEProduct *)&PRODUCT_LIST[i];
+            struct BPProduct *prod = (struct BPProduct *)&PRODUCT_LIST[i];
             uint8_t dev_ok = 0;
 
             // USB device - match product/vendor ID
@@ -261,7 +261,7 @@ int hedev_poll_usb_devices () {
                 continue;
 
             // TODO: how to handle multiple devices without serial number?
-            struct HEDev *dev = find_device(prod, curdev->serial_number, curdev->path);
+            struct BPDev *dev = find_device(prod, curdev->serial_number, curdev->path);
             if(dev == NULL) {
                 // Fix for Windows not allowing to read/write from/to a certain input device
                 int dev_open_read = 0;
@@ -313,7 +313,7 @@ int hedev_poll_usb_devices () {
     return 0;
 }
 
-cJSON *hedev_to_json (struct HEDev *device) {
+cJSON *bpdev_to_json (struct BPDev *device) {
     cJSON *jsn = cJSON_CreateObject();
     // PRODUCT INFO
     cJSON *prod = cJSON_AddObjectToObject(jsn, "product");
@@ -328,19 +328,19 @@ cJSON *hedev_to_json (struct HEDev *device) {
     snprintf(buff, 63, "%ls", device->serial);
     cJSON *dev = cJSON_AddObjectToObject(jsn, "device");
     cJSON_AddStringToObject(dev, "serial", buff);
-    cJSON_AddStringToObject(dev, "protocol", device->protocol == HED_PROTO_USB ? "usb" : "bt");
+    cJSON_AddStringToObject(dev, "protocol", device->protocol == BP_PROTO_USB ? "usb" : "bt");
 
     return jsn;
 }
 
-void hedev_init () {
+void bpdev_init () {
     memset(device_list, 0, sizeof(device_list));
 }
 
-void hedev_print_products () {
+void bpdev_print_products () {
     printf("Devices:\n");
     for(int i = 0; i < (int)PRODUCT_COUNT; i++) {
-        const struct HEProduct *dev = &PRODUCT_LIST[i];
+        const struct BPProduct *dev = &PRODUCT_LIST[i];
         printf("  Device %i:\n", i);
         printf("    VID:PID:      %04X:%04X\n", dev->vendorid, dev->productid);
         printf("    Manufacturer: %s\n", dev->manufacturer);

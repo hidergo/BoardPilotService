@@ -1,5 +1,5 @@
-#ifndef __HEDEF_H
-#define __HEDEF_H
+#ifndef __BPDEF_H
+#define __BPDEF_H
 #include <stdio.h>
 
 #ifdef __GNUC__

@@ -1,1 +1,0 @@
-target_sources(hidergodm PRIVATE cJSON.c)

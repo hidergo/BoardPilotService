@@ -1,8 +1,8 @@
-#ifndef __HEAPI_MSG_H
-#define __HEAPI_MSG_H
+#ifndef __BPAPI_MSG_H
+#define __BPAPI_MSG_H
 
 #include "cJSON/cJSON.h"
-#include "heapi.h"
+#include "bpapi.h"
 
 /**
  * @brief Checks message format
@@ -10,7 +10,7 @@
  * @param json 
  * @return int 
  */
-int heapi_msg_validate (cJSON *json);
+int bpapi_msg_validate (cJSON *json);
 
 /**
  * @brief Parse authentication message
@@ -20,7 +20,7 @@ int heapi_msg_validate (cJSON *json);
  * @param resp 
  * @return int 
  */
-int heapi_msg_AUTH (struct HEApiClient *client, cJSON *json, cJSON *resp);
+int bpapi_msg_AUTH (struct BPApiClient *client, cJSON *json, cJSON *resp);
 
 /**
  * @brief Parse get devices message
@@ -30,7 +30,7 @@ int heapi_msg_AUTH (struct HEApiClient *client, cJSON *json, cJSON *resp);
  * @param resp 
  * @return int 
  */
-int heapi_msg_DEVICES (struct HEApiClient *client, cJSON *json, cJSON *resp);
+int bpapi_msg_DEVICES (struct BPApiClient *client, cJSON *json, cJSON *resp);
 
 /**
  * @brief Parse write field to the device message
@@ -40,7 +40,7 @@ int heapi_msg_DEVICES (struct HEApiClient *client, cJSON *json, cJSON *resp);
  * @param resp
  * @return int
 */
-int heapi_msg_ZMK_CONTROL_WRITE (struct HEApiClient *client, cJSON *json, cJSON *resp);
+int bpapi_msg_ZMK_CONTROL_WRITE (struct BPApiClient *client, cJSON *json, cJSON *resp);
 
 /**
  * @brief Parse read field from the device message
@@ -50,6 +50,6 @@ int heapi_msg_ZMK_CONTROL_WRITE (struct HEApiClient *client, cJSON *json, cJSON 
  * @param resp
  * @return int
 */
-int heapi_msg_ZMK_CONTROL_READ (struct HEApiClient *client, cJSON *json, cJSON *resp);
+int bpapi_msg_ZMK_CONTROL_READ (struct BPApiClient *client, cJSON *json, cJSON *resp);
 
 #endif

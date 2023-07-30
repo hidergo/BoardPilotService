@@ -1,7 +1,7 @@
 
 #include <time.h>
 #include <string.h>
-#include "hedev.h"
+#include "bpdev.h"
 #include "zmk_control.h"
 
 #if defined(_WIN32)
@@ -86,7 +86,7 @@ int _zmk_control_get_gmt_offset () {
 }
 #endif
 
-int zmk_control_msg_set_time (struct HEDev *device) {
+int zmk_control_msg_set_time (struct BPDev *device) {
     time_t rawtime;
 
     time(&rawtime);
@@ -117,7 +117,7 @@ int zmk_control_msg_set_time (struct HEDev *device) {
     return zmk_control_set_config(device, ZMK_CONFIG_KEY_DATETIME, &_time_msg, sizeof(_time_msg), 0);
 }
 
-int zmk_control_set_config (struct HEDev *device, uint16_t key, void *data, uint16_t len, uint8_t save) {
+int zmk_control_set_config (struct BPDev *device, uint16_t key, void *data, uint16_t len, uint8_t save) {
     // Output buffer
     uint8_t buff[4092];
 
@@ -138,7 +138,7 @@ int zmk_control_set_config (struct HEDev *device, uint16_t key, void *data, uint
     return 0;
 }
 
-int zmk_control_get_config (struct HEDev *device, uint16_t key, void *data, uint16_t maxlen) {
+int zmk_control_get_config (struct BPDev *device, uint16_t key, void *data, uint16_t maxlen) {
     // Output buffer
     uint8_t buff[32];
     // Header
@@ -169,7 +169,7 @@ int zmk_control_get_config (struct HEDev *device, uint16_t key, void *data, uint
 
 uint8_t msg_buffer[ZMK_CONTROL_REPORT_SIZE];
 
-int zmk_control_write_message (struct HEDev *device, struct zmk_control_msg_header *header, uint8_t *data) {
+int zmk_control_write_message (struct BPDev *device, struct zmk_control_msg_header *header, uint8_t *data) {
     memset(msg_buffer, 0, sizeof(msg_buffer));
     if(header->size <= ZMK_CONTROL_REPORT_DATA_SIZE) {
         // No need for chunks - build message
