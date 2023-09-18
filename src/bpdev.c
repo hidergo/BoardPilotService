@@ -14,17 +14,16 @@ const struct BPProduct PRODUCT_LIST[] = {
         "Disconnect MK1",    // Product name
         "Disconnect MK1", // Product string for bluetooth
         1           // Revision
-    }
-    /*,
+    },
     {
-        // hid:ergo Disconnect MK1 (left)
-        0x1915,     // VID 
-        0x5210,     // PID
-        "hid:ergo", // Manufacturer
-        "Disconnect MK1(L)",    // Product name
-        "Disconnect MK1",       // Product string for bluetooth (never connected)
+        // Corne
+        0x1D50,     // VID 
+        0x615E,     // PID
+        "ZMK Project",  // Manufacturer
+        "Corne",    // Product name
+        "Corne",    // Product string for bluetooth
         1           // Revision
-    }*/
+    },
 };
 const size_t PRODUCT_COUNT = sizeof(PRODUCT_LIST) / sizeof(struct BPProduct);
 
@@ -246,7 +245,12 @@ int bpdev_poll_usb_devices () {
 
             // USB device - match product/vendor ID
             if((uint16_t)curdev->product_id == prod->productid && (uint16_t)curdev->vendor_id == prod->vendorid) {
-                dev_ok = 1;
+                // Multiple devices may be with the same VID/PID
+                // Must check name too
+                snprintf(buff, 63, "%ls", curdev->product_string);
+                if(strcmp(buff, prod->product_string) == 0) {
+                    dev_ok = 1;
+                }
             }
             else {
                 // Might be bluetooth device - match product/manufacturer name
