@@ -30,6 +30,9 @@ struct BPProduct {
     // Bluetooth product name match
     const char *product_string;
 
+    // Device identifier (dcmk1 for Disconnect MK1, corne for Corne...) TODO: should be renamed?
+    const char *device_id;
+
     // Product revision
     uint8_t rev;
 };

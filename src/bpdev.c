@@ -13,6 +13,7 @@ const struct BPProduct PRODUCT_LIST[] = {
         "hid:ergo", // Manufacturer
         "Disconnect MK1",    // Product name
         "Disconnect MK1", // Product string for bluetooth
+        "dcmk1",    // Device identifier
         1           // Revision
     },
     {
@@ -22,6 +23,7 @@ const struct BPProduct PRODUCT_LIST[] = {
         "ZMK Project",  // Manufacturer
         "Corne",    // Product name
         "Corne",    // Product string for bluetooth
+        "corne",    // Device identifier
         1           // Revision
     },
 };
@@ -325,6 +327,7 @@ cJSON *bpdev_to_json (struct BPDev *device) {
     cJSON_AddNumberToObject(prod, "pid", device->product->productid);
     cJSON_AddStringToObject(prod, "manufacturer", device->product->manufacturer);
     cJSON_AddStringToObject(prod, "product", device->product->product);
+    cJSON_AddStringToObject(prod, "device_id", device->product->device_id);
     cJSON_AddNumberToObject(prod, "rev", device->product->rev);
 
     // DEVICE INFO
